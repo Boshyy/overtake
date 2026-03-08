@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react'
 import { createRoom, joinRoom } from '../lib/game.js'
 import { POWERUPS } from '../lib/constants.js'
+import { generateQuestionsFromText, extractTextFromPDF } from '../lib/ai.js'
 
 const SAMPLE_QUESTIONS = [
   { q: 'What is the powerhouse of the cell?', options: ['A) Nucleus', 'B) Mitochondria', 'C) Ribosome', 'D) Golgi body'], a: 'B' },
@@ -23,12 +24,39 @@ export default function Home({ onEnterGame }) {
   const [joinCode, setJoinCode] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [pdfFile, setPdfFile] = useState(null)
+  const [questions, setQuestions] = useState(null)
+  const [generatingQ, setGeneratingQ] = useState(false)
+  const fileRef = useRef()
+
+  const handlePDF = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    setPdfFile(file)
+    setGeneratingQ(true)
+    setError('')
+    try {
+      const base64 = await new Promise((res, rej) => {
+        const reader = new FileReader()
+        reader.onload = () => res(reader.result.split(',')[1])
+        reader.onerror = rej
+        reader.readAsDataURL(file)
+      })
+      const text = await extractTextFromPDF(base64)
+      const qs = await generateQuestionsFromText(text)
+      setQuestions(qs)
+    } catch (e) {
+      setError('Could not process PDF. Using sample questions.')
+      setQuestions(SAMPLE_QUESTIONS)
+    }
+    setGeneratingQ(false)
+  }
 
   const handleCreate = async () => {
     if (!playerName.trim()) { setError('Enter your name'); return }
     setLoading(true); setError('')
     try {
-      const code = await createRoom(playerName.trim(), SAMPLE_QUESTIONS)
+      const code = await createRoom(playerName.trim(), questions || SAMPLE_QUESTIONS)
       await joinRoom(code, playerName.trim())
       onEnterGame(code, playerName.trim(), true)
     } catch (e) {
@@ -67,7 +95,7 @@ export default function Home({ onEnterGame }) {
           color: '#fff', letterSpacing: '4px',
           textShadow: '0 0 40px rgba(249,115,22,0.5)',
         }}>
-          REV<span style={{ color: '#f97316' }}>RACER</span>
+          OVER<span style={{ color: '#f97316' }}>TAKE</span>
         </h1>
         <div style={{ color: '#4b5563', fontFamily: 'Exo 2, sans-serif', marginTop: '8px', fontSize: '14px' }}>
           Study hard. Race harder.
@@ -116,6 +144,50 @@ export default function Home({ onEnterGame }) {
                 style={inputStyle} />
             </div>
 
+            {mode === 'create' && (
+              <div style={{ marginBottom: '20px' }}>
+                <label style={labelStyle}>REVISION NOTES (PDF)</label>
+                <div
+                  onClick={() => fileRef.current.click()}
+                  style={{
+                    border: `2px dashed ${pdfFile ? '#22c55e' : '#374151'}`,
+                    borderRadius: '12px', padding: '20px', textAlign: 'center',
+                    cursor: 'pointer', background: '#080812',
+                  }}>
+                  {generatingQ ? (
+                    <div>
+                      <div style={{ fontSize: '28px', marginBottom: '8px' }}>⚡</div>
+                      <div style={{ color: '#f97316', fontFamily: 'Orbitron, monospace', fontSize: '12px' }}>GENERATING QUESTIONS...</div>
+                    </div>
+                  ) : questions ? (
+                    <div>
+                      <div style={{ fontSize: '28px', marginBottom: '8px' }}>✅</div>
+                      <div style={{ color: '#22c55e', fontFamily: 'Exo 2, sans-serif', fontSize: '13px' }}>
+                        {pdfFile?.name} — {questions.length} questions ready
+                      </div>
+                      <div style={{ color: '#6b7280', fontSize: '11px', marginTop: '4px' }}>Click to change</div>
+                    </div>
+                  ) : (
+                    <div>
+                      <div style={{ fontSize: '28px', marginBottom: '8px' }}>📄</div>
+                      <div style={{ color: '#9ca3af', fontFamily: 'Exo 2, sans-serif', fontSize: '13px' }}>
+                        Click to upload PDF notes
+                      </div>
+                      <div style={{ color: '#4b5563', fontSize: '11px', marginTop: '4px' }}>
+                        AI will generate quiz questions automatically
+                      </div>
+                    </div>
+                  )}
+                  <input ref={fileRef} type="file" accept=".pdf" onChange={handlePDF} style={{ display: 'none' }} />
+                </div>
+                {!pdfFile && !generatingQ && (
+                  <div style={{ color: '#4b5563', fontSize: '11px', fontFamily: 'Exo 2, sans-serif', marginTop: '8px', textAlign: 'center' }}>
+                    No PDF? Sample questions will be used.
+                  </div>
+                )}
+              </div>
+            )}
+
             {mode === 'join' && (
               <div style={{ marginBottom: '14px' }}>
                 <label style={labelStyle}>ROOM CODE</label>
@@ -135,9 +207,9 @@ export default function Home({ onEnterGame }) {
 
             <button
               onClick={mode === 'create' ? handleCreate : handleJoin}
-              disabled={loading}
-              style={btnStyle(loading ? '#374151' : '#f97316')}>
-              {loading ? '...' : mode === 'create' ? '🏁 Create & Enter Lobby' : '🚗 Join Race'}
+              disabled={loading || generatingQ}
+              style={btnStyle(loading || generatingQ ? '#374151' : '#f97316')}>
+              {loading ? '...' : generatingQ ? 'GENERATING...' : mode === 'create' ? '🏁 Create & Enter Lobby' : '🚗 Join Race'}
             </button>
           </div>
         )}
