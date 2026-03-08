@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useSpeech } from '../hooks/useSpeech.js'
-import { POWERUPS, PLAYER_COLORS, QUESTION_TIME } from '../lib/constants.js'
+import { POWERUPS } from '../lib/constants.js'
 
 const OPTIONS = ['A', 'B', 'C', 'D']
 
@@ -38,20 +38,15 @@ export default function QuestionCard({
     let bestMatch = null
     let bestScore = 0
     for (const opt of OPTIONS) {
-        const optionText = question?.options?.find(o => o.startsWith(`${opt})`))
-        if (!optionText) continue
-        const optWords = norm(optionText.replace(`${opt})`, '')).split(' ').filter(w => w.length > 2)
-        let score = 0
-        for (const word of optWords) {
-            if (spoken.includes(word)) score++
-        }
-        if (score > bestScore) {
-            bestScore = score
-            bestMatch = opt
-        }
-      }
-      if (bestMatch && bestScore > 0) setSelected(bestMatch)
-    }, [transcript])
+      const optionText = question?.options?.find(o => o.startsWith(`${opt})`))
+      if (!optionText) continue
+      const optWords = norm(optionText.replace(`${opt})`, '')).split(' ').filter(w => w.length > 2)
+      let score = 0
+      for (const word of optWords) { if (spoken.includes(word)) score++ }
+      if (score > bestScore) { bestScore = score; bestMatch = opt }
+    }
+    if (bestMatch && bestScore > 0) setSelected(bestMatch)
+  }, [transcript])
 
   const handleSubmit = () => {
     if (!selected || submitted) return
@@ -59,102 +54,80 @@ export default function QuestionCard({
     stop()
     const correct = selected === question.a
     setResult(correct ? 'correct' : 'wrong')
-    setTimeout(() => onAnswer(correct, activePowerup), 1400)
+    setTimeout(() => onAnswer(correct, activePowerup), 1200)
   }
 
   const timePct = (timeLeft / maxTime) * 100
   const timerColor = timePct > 50 ? '#22c55e' : timePct > 25 ? '#fbbf24' : '#ef4444'
 
-  if (!isMyTurn) {
-    return (
-      <div style={{
-        background: '#0d0d1a', border: '1px solid #1f2937',
-        borderRadius: '20px', padding: '28px', textAlign: 'center',
-      }}>
-        <div style={{ fontSize: '40px', marginBottom: '12px' }}>⏳</div>
-        <div style={{
-          fontFamily: 'Orbitron, monospace', color: currentPlayerColor,
-          fontSize: '14px', fontWeight: 700, marginBottom: '8px',
-        }}>
-          {waitingFor}'s Turn
-        </div>
-        <div style={{ color: '#6b7280', fontFamily: 'Exo 2, sans-serif', fontSize: '13px' }}>
-          Waiting for them to answer...
-        </div>
-        <div style={{ marginTop: '20px', background: '#1f2937', borderRadius: '100px', height: '6px' }}>
-          <div style={{
-            width: `${timePct}%`, height: '100%', borderRadius: '100px',
-            background: timerColor, transition: 'width 1s linear',
-          }} />
-        </div>
-        <div style={{
-          fontFamily: 'Orbitron, monospace', color: timerColor,
-          fontSize: '22px', fontWeight: 900, marginTop: '10px',
-        }}>{timeLeft}s</div>
-      </div>
-    )
+  const cardStyle = {
+    background: '#0d0d1a',
+    border: `1px solid ${isMyTurn ? currentPlayerColor + '55' : '#1f2937'}`,
+    borderRadius: '14px',
+    padding: '12px 14px',
+    position: 'relative',
+    overflow: 'hidden',
+    height: '100%',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px',
   }
 
   return (
-    <div style={{
-      background: '#0d0d1a',
-      border: `2px solid ${currentPlayerColor}33`,
-      borderRadius: '20px', padding: '24px',
-      position: 'relative', overflow: 'hidden',
-    }}>
-      <div style={{
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px',
-      }}>
+    <div style={cardStyle}>
+
+      {/* Top row: who's turn + timer */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{
-          fontFamily: 'Orbitron, monospace', color: currentPlayerColor,
-          fontSize: '12px', fontWeight: 700, letterSpacing: '2px',
+          fontFamily: 'Orbitron, monospace', fontSize: '10px', fontWeight: 700,
+          color: currentPlayerColor, letterSpacing: '1.5px',
         }}>
-          YOUR TURN
+          {isMyTurn ? '▶ YOUR TURN' : `▶ ${currentPlayerName?.toUpperCase()}'S TURN`}
         </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          {myPowerups.map((pu, i) => (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {/* Power-up buttons (only shown on your turn) */}
+          {isMyTurn && myPowerups.map((pu, i) => (
             <button key={i}
               onClick={() => !submitted && onUsePowerup(pu)}
               title={POWERUPS[pu]?.desc}
               style={{
                 background: activePowerup === pu ? `${POWERUPS[pu]?.color}33` : '#1f2937',
                 border: `1px solid ${POWERUPS[pu]?.color}66`,
-                borderRadius: '8px', padding: '5px 10px',
-                cursor: 'pointer', fontSize: '16px', transition: 'all 0.2s',
+                borderRadius: '6px', padding: '3px 7px',
+                cursor: 'pointer', fontSize: '14px',
               }}>
               {POWERUPS[pu]?.emoji}
             </button>
           ))}
+          {/* Timer */}
+          <div style={{
+            fontFamily: 'Orbitron, monospace', fontSize: '18px', fontWeight: 900,
+            color: timerColor, minWidth: '36px', textAlign: 'right',
+          }}>{timeLeft}s</div>
         </div>
       </div>
 
-      <div style={{ background: '#1f2937', borderRadius: '100px', height: '5px', marginBottom: '6px' }}>
+      {/* Timer bar */}
+      <div style={{ background: '#1f2937', borderRadius: '100px', height: '3px' }}>
         <div style={{
           width: `${timePct}%`, height: '100%', borderRadius: '100px',
           background: timerColor, transition: 'width 1s linear',
-          boxShadow: `0 0 6px ${timerColor}`,
+          boxShadow: `0 0 4px ${timerColor}`,
         }} />
       </div>
-      <div style={{
-        textAlign: 'center', fontFamily: 'Orbitron, monospace',
-        color: timerColor, fontSize: '26px', fontWeight: 900, marginBottom: '20px',
-      }}>{timeLeft}s</div>
 
+      {/* Question text */}
       <div style={{
-        background: '#13131f', borderRadius: '12px', padding: '18px',
-        marginBottom: '20px', textAlign: 'center',
+        background: '#13131f', borderRadius: '10px', padding: '10px 12px', textAlign: 'center',
       }}>
         <div style={{
-          color: '#9ca3af', fontSize: '10px', letterSpacing: '3px',
-          fontFamily: 'Orbitron, monospace', marginBottom: '10px',
-        }}>QUESTION</div>
-        <div style={{
-          color: '#f9fafb', fontSize: 'clamp(0.95rem, 2.5vw, 1.2rem)',
-          fontFamily: 'Exo 2, sans-serif', lineHeight: 1.5, fontWeight: 600,
+          color: '#f9fafb', fontSize: '13px',
+          fontFamily: 'Barlow Condensed, sans-serif', lineHeight: 1.4, fontWeight: 600,
         }}>{question?.q}</div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '20px' }}>
+      {/* Answer options */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', flex: 1 }}>
         {question?.options?.map((opt, i) => {
           const letter = OPTIONS[i]
           const isSelected = selected === letter
@@ -163,90 +136,92 @@ export default function QuestionCard({
 
           let bg = '#13131f'
           let border = '#1f2937'
-          let textColor = '#d1d5db'
+          let textColor = '#9ca3af'
           if (isSelected && !submitted) { bg = `${currentPlayerColor}22`; border = currentPlayerColor; textColor = '#fff' }
           if (isCorrectReveal) { bg = '#22c55e22'; border = '#22c55e'; textColor = '#22c55e' }
           if (isWrongReveal) { bg = '#ef444422'; border = '#ef4444'; textColor = '#ef4444' }
 
+          // Non-active players can see options but can't click
+          const clickable = isMyTurn && !submitted
+
           return (
             <button key={letter}
-              onClick={() => !submitted && setSelected(letter)}
+              onClick={() => clickable && setSelected(letter)}
               style={{
-                padding: '12px 14px', borderRadius: '10px', textAlign: 'left',
-                border: `2px solid ${border}`, background: bg, color: textColor,
-                fontFamily: 'Exo 2, sans-serif', fontSize: '13px', cursor: submitted ? 'default' : 'pointer',
-                transition: 'all 0.2s', lineHeight: 1.4,
+                padding: '8px 10px', borderRadius: '8px', textAlign: 'left',
+                border: `1.5px solid ${border}`, background: bg, color: textColor,
+                fontFamily: 'Barlow Condensed, sans-serif', fontSize: '12px',
+                cursor: clickable ? 'pointer' : 'default',
+                transition: 'all 0.15s', lineHeight: 1.3,
+                opacity: !isMyTurn && !isSelected ? 0.7 : 1,
               }}>
-              <span style={{ fontFamily: 'Orbitron, monospace', fontWeight: 700, marginRight: '8px', fontSize: '11px' }}>
-                {letter}
-              </span>
+              <span style={{
+                fontFamily: 'Orbitron, monospace', fontWeight: 700,
+                marginRight: '6px', fontSize: '10px', color: border,
+              }}>{letter}</span>
               {opt.replace(`${letter}) `, '')}
             </button>
           )
         })}
       </div>
 
-      <div style={{
-        background: '#080812', borderRadius: '10px', padding: '12px 16px',
-        marginBottom: '14px', minHeight: '44px',
-        border: listening ? '1px solid #ef444444' : '1px solid #1f2937',
-        transition: 'border 0.3s',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-          <div style={{
-            width: '8px', height: '8px', borderRadius: '50%',
-            background: listening ? '#ef4444' : '#374151',
-            boxShadow: listening ? '0 0 8px #ef4444' : 'none',
-            animation: listening ? 'blink 1s infinite' : 'none',
-          }} />
-          <span style={{ color: '#6b7280', fontSize: '11px', fontFamily: 'Orbitron, monospace', letterSpacing: '1px' }}>
-            {listening ? 'LISTENING' : 'MIC OFF'}
-          </span>
-          {!supported && <span style={{ color: '#6b7280', fontSize: '11px' }}>— use Chrome for voice</span>}
-        </div>
+      {/* Voice indicator (compact, only when your turn) */}
+      {isMyTurn && (
         <div style={{
-          color: transcript ? '#f9fafb' : '#374151',
-          fontFamily: 'Exo 2, sans-serif', fontSize: '14px',
-          fontStyle: transcript ? 'normal' : 'italic',
+          display: 'flex', alignItems: 'center', gap: '6px',
+          background: '#080812', borderRadius: '8px', padding: '6px 10px',
+          border: listening ? '1px solid #ef444433' : '1px solid #1f2937',
         }}>
-          {transcript || 'Say your answer out loud — e.g. "mitochondria"'}
+          <div style={{
+            width: '6px', height: '6px', borderRadius: '50%', flexShrink: 0,
+            background: listening ? '#ef4444' : '#374151',
+            boxShadow: listening ? '0 0 6px #ef4444' : 'none',
+          }} />
+          <div style={{
+            color: transcript ? '#f9fafb' : '#4b5563',
+            fontSize: '11px', fontFamily: 'Barlow Condensed, sans-serif',
+            fontStyle: transcript ? 'normal' : 'italic',
+            flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+          }}>
+            {transcript || (listening ? 'Listening... say your answer' : 'Mic off')}
+          </div>
+          {!supported && <span style={{ color: '#6b7280', fontSize: '10px' }}>Chrome only</span>}
         </div>
-      </div>
+      )}
 
-      {!submitted && (
+      {/* Submit button (only your turn) */}
+      {isMyTurn && !submitted && (
         <button onClick={handleSubmit} disabled={!selected}
           style={{
-            width: '100%', padding: '14px', borderRadius: '12px', border: 'none',
+            padding: '10px', borderRadius: '10px', border: 'none',
             background: selected
               ? `linear-gradient(135deg, ${currentPlayerColor}, ${currentPlayerColor}bb)`
               : '#1f2937',
             color: selected ? '#000' : '#374151',
-            fontFamily: 'Orbitron, monospace', fontWeight: 700, fontSize: '13px',
+            fontFamily: 'Orbitron, monospace', fontWeight: 700, fontSize: '11px',
             letterSpacing: '2px', cursor: selected ? 'pointer' : 'not-allowed',
             transition: 'all 0.2s',
           }}>
-          LOCK IN ANSWER
+          LOCK IN
         </button>
       )}
 
+      {/* Result overlay */}
       {result && (
         <div style={{
           position: 'absolute', inset: 0,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           background: result === 'correct' ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.12)',
-          borderRadius: '18px', backdropFilter: 'blur(3px)',
+          borderRadius: '13px', backdropFilter: 'blur(3px)',
         }}>
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '72px' }}>{result === 'correct' ? '✅' : '❌'}</div>
+            <div style={{ fontSize: '48px' }}>{result === 'correct' ? '✅' : '❌'}</div>
             <div style={{
-              fontFamily: 'Orbitron, monospace', fontWeight: 900, fontSize: '28px',
+              fontFamily: 'Orbitron, monospace', fontWeight: 900, fontSize: '22px',
               color: result === 'correct' ? '#22c55e' : '#ef4444',
-              textShadow: `0 0 20px ${result === 'correct' ? '#22c55e' : '#ef4444'}`,
+              textShadow: `0 0 16px ${result === 'correct' ? '#22c55e' : '#ef4444'}`,
             }}>
               {result === 'correct' ? 'CORRECT!' : 'WRONG!'}
-            </div>
-            <div style={{ color: '#9ca3af', fontFamily: 'Exo 2, sans-serif', fontSize: '13px', marginTop: '6px' }}>
-              Answer: {question?.a}
             </div>
           </div>
         </div>

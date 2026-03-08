@@ -151,7 +151,7 @@ async function advanceTurn(code, room) {
   const totalQuestions = (room.questions || []).length
 
   // All questions used up — whoever is furthest ahead wins
-  if (nextQuestionIndex >= totalQuestions) {
+  if (nextQuestionIndex >= 12 || nextQuestionIndex >= totalQuestions) {
     const allPlayers = Object.values(room.players || {})
     const leader = allPlayers.sort((a, b) => b.position - a.position)[0]
     await update(ref(db, `rooms/${code}`), {

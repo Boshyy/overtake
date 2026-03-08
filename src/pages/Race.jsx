@@ -149,6 +149,7 @@ export default function Race({ roomCode, playerName, onFinish }) {
         .quadrant-inner { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 8px 14px 14px; scrollbar-width: thin; scrollbar-color: #1f2937 transparent; }
         .quadrant-inner::-webkit-scrollbar { width: 4px; }
         .quadrant-inner::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 2px; }
+        .q-question .quadrant-inner { overflow-y: hidden; padding: 6px 10px 10px; display: flex; flex-direction: column; }
 
         @keyframes slide-in { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
         @keyframes boost-flash { 0%,100%{opacity:1} 50%{opacity:0.5} }
@@ -194,7 +195,7 @@ export default function Race({ roomCode, playerName, onFinish }) {
 
           <div className="quadrant q-question">
             <div className="quadrant-label">
-              {isMyTurn ? 'YOUR QUESTION' : `WAITING FOR ${currentTurnName?.toUpperCase()}`}
+              {isMyTurn ? 'YOUR QUESTION' : `${currentTurnName?.toUpperCase()}'S QUESTION`}
             </div>
             <div className="quadrant-inner">
               {currentQuestion && (
