@@ -11,9 +11,30 @@ export default function Race({ roomCode, playerName, onFinish }) {
   const [maxTime, setMaxTime] = useState(QUESTION_TIME)
   const [activePowerup, setActivePowerup] = useState(null)
   const [hasAnswered, setHasAnswered] = useState(false)
+  const [countdown, setCountdown] = useState(10)
+  const [raceStarted, setRaceStarted] = useState(false)
   const timerRef = useRef(null)
   const questionKeyRef = useRef(null)
 
+
+  useEffect(() => {
+    if (navigator.mediaDevices) {
+      navigator.mediaDevices.getUserMedia({ audio: true })
+        .then(() => console.log('mic granted'))
+        .catch(() => console.log('mic denied'))
+    }
+    const interval = setInterval(() => {
+      setCountdown(prev => {
+        if (prev <= 1) {
+          clearInterval(interval)
+          setRaceStarted(true)
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+    return () => clearInterval(interval)
+  }, [])
 
   useEffect(() => {
     const unsub = subscribeRoom(roomCode, (data) => setRoom(data))
@@ -91,6 +112,45 @@ export default function Race({ roomCode, playerName, onFinish }) {
   }
 
   if (!room) return <Loading />
+
+  if (!raceStarted) {
+    return (
+      <div style={{
+        minHeight: '100vh', background: '#080810',
+        display: 'flex', flexDirection: 'column', alignItems: 'center',
+        justifyContent: 'center', gap: '24px',
+      }}>
+        <div style={{ fontFamily: 'Orbitron, monospace', fontWeight: 900, fontSize: '18px', color: '#fff' }}>
+          OVER<span style={{ color: '#f97316' }}>TAKE</span>
+        </div>
+        <div style={{
+          fontFamily: 'Orbitron, monospace', fontWeight: 900,
+          fontSize: 'clamp(5rem, 20vw, 10rem)', color: '#f97316',
+          textShadow: '0 0 60px rgba(249,115,22,0.8)',
+          animation: 'pulse 1s infinite',
+        }}>
+          {countdown}
+        </div>
+        <div style={{ color: '#9ca3af', fontFamily: 'Exo 2, sans-serif', fontSize: '16px' }}>
+          Race starting soon...
+        </div>
+        <div style={{
+          background: '#0d0d1a', border: '1px solid #f9731633',
+          borderRadius: '14px', padding: '16px 24px', textAlign: 'center',
+          maxWidth: '320px',
+        }}>
+          <div style={{ fontSize: '28px', marginBottom: '8px' }}>🎙️</div>
+          <div style={{ color: '#f97316', fontFamily: 'Orbitron, monospace', fontSize: '11px', letterSpacing: '2px', marginBottom: '6px' }}>
+            MICROPHONE ACCESS
+          </div>
+          <div style={{ color: '#9ca3af', fontFamily: 'Exo 2, sans-serif', fontSize: '13px' }}>
+            Please allow microphone access when prompted so you can answer questions by voice!
+          </div>
+        </div>
+        <style>{`@keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.05)} }`}</style>
+      </div>
+    )
+  }
 
   const sortedPlayers = [...players].sort((a, b) => b.position - a.position)
   const currentPlayerSlot = players.findIndex(p => p.name === currentTurnName)

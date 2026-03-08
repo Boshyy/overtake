@@ -99,7 +99,9 @@ export async function submitAnswer(code, playerName, correct, activePowerup) {
     return
   }
 
-  await advanceTurn(code, room)
+  const freshSnap = await get(ref(db, `rooms/${code}`))
+  await advanceTurn(code, freshSnap.val())
+    
 }
 
 async function advanceTurn(code, room) {
