@@ -20,9 +20,8 @@ ${text.substring(0, 4000)}`
 }
 
 export async function extractTextFromPDF(base64Data) {
-  const prompt = 'Extract all the text content from this document. Return only the raw text, no commentary.'
   const result = await model.generateContent([
-    prompt,
+    'Extract all the text content from this document. Return only the raw text, no commentary.',
     { inlineData: { mimeType: 'application/pdf', data: base64Data } }
   ])
   return result.response.text()
