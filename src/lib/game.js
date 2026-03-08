@@ -126,9 +126,10 @@ export async function submitAnswer(code, playerName, correct, activePowerup) {
     updates[`players/${playerName}/boostUntil`] = Date.now() + BOOST_DURATION
   }
 
-  updates[`players/${playerName}/score`] = (player.score || 0) + (correct ? 1 : 0)
-  await update(ref(db, `rooms/${code}`), updates)
-  await advanceTurn(code, room) // always called regardless of correct/wrong
+    updates[`players/${playerName}/score`] = (player.score || 0) + (correct ? 1 : 0)
+    await update(ref(db, `rooms/${code}`), updates)
+    const freshSnap = await get(ref(db, `rooms/${code}`))
+    await advanceTurn(code, freshSnap.val())
 }
 
 async function advanceTurn(code, room) {
