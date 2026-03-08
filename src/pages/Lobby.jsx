@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { subscribeRoom, setReady, startGame } from '../lib/game.js'
 import { PLAYER_COLORS } from '../lib/constants.js'
 
-export default function Lobby({ roomCode, playerName, isHost }) {
+export default function Lobby({ roomCode, playerName, isHost, onStartRace }) {
   const [room, setRoom] = useState(null)
 
   useEffect(() => {
@@ -14,9 +14,6 @@ export default function Lobby({ roomCode, playerName, isHost }) {
 
   const players = Object.values(room.players || {})
   const allReady = players.length >= 2 && players.every(p => p.ready)
-  console.log('players:', players)
-  console.log('allReady:', allReady)
-  console.log('isHost:', isHost)
   const meReady = room.players?.[playerName]?.ready
 
   return (
@@ -105,21 +102,23 @@ export default function Lobby({ roomCode, playerName, isHost }) {
         )}
 
         {isHost && allReady && (
-            <button onClick={() => { console.log('START CLICKED', roomCode); startGame(roomCode) }} style={{ ...bigBtn('#f97316'), marginTop: '12px' }}>
-            🏁 START RACE
+            <button onClick={async () => {
+                await startGame(roomCode)
+                onStartRace()
+            }} style={{ ...bigBtn('#f97316'), marginTop: '12px' }}>
+                🏁 START RACE
             </button>
         )}
-
         {isHost && !allReady && players.length >= 2 && (
-            <div style={{ textAlign: 'center', color: '#6b7280', fontFamily: 'Exo 2, sans-serif', fontSize: '13px', marginTop: '12px' }}>
+          <div style={{ textAlign: 'center', color: '#6b7280', fontFamily: 'Exo 2, sans-serif', fontSize: '13px', marginTop: '12px' }}>
             Waiting for all players to ready up...
-        </div>
+          </div>
         )}
 
         {isHost && players.length < 2 && (
-        <div style={{ textAlign: 'center', color: '#6b7280', fontFamily: 'Exo 2, sans-serif', fontSize: '13px', marginTop: '12px' }}>
+          <div style={{ textAlign: 'center', color: '#6b7280', fontFamily: 'Exo 2, sans-serif', fontSize: '13px', marginTop: '12px' }}>
             Need at least 2 players to start
-        </div>
+          </div>
         )}
       </div>
     </div>
