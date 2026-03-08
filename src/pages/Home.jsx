@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useRef } from 'react'
 import { createRoom, joinRoom } from '../lib/game.js'
 import { POWERUPS } from '../lib/constants.js'
 import { generateQuestionsFromText, extractTextFromPDF } from '../lib/ai.js'
@@ -17,55 +17,6 @@ const SAMPLE_QUESTIONS = [
   { q: 'What is the capital of France?', options: ['A) Lyon', 'B) Marseille', 'C) Nice', 'D) Paris'], a: 'D' },
   { q: 'In what year did the Berlin Wall fall?', options: ['A) 1987', 'B) 1989', 'C) 1991', 'D) 1993'], a: 'B' },
 ]
-
-function useMount() {
-  const [mounted, setMounted] = useState(false)
-  useEffect(() => { setTimeout(() => setMounted(true), 50) }, [])
-  return mounted
-}
-
-function BigButton({ children, onClick, primary = false, disabled = false }) {
-  const [hovered, setHovered] = useState(false)
-  return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        width: "100%",
-        padding: "14px 24px",
-        borderRadius: "4px",
-        border: `1.5px solid ${primary ? C.pink : C.charcoal}`,
-        background: disabled ? C.charcoal : hovered
-          ? primary ? C.pink : "#2a1010"
-          : primary ? `${C.pink}bb` : "transparent",
-        color: disabled ? C.warmGrey : primary ? C.cream : C.tan,
-        fontFamily: "'Arena', sans-serif",
-        fontWeight: 400,
-        fontSize: "18px",
-        letterSpacing: "5px",
-        cursor: disabled ? "not-allowed" : "pointer",
-        transition: "all 0.2s ease",
-        transform: hovered && !disabled ? "translateY(-1px)" : "translateY(0)",
-        boxShadow: hovered && !disabled ? `0 6px 24px ${primary ? C.pink : C.blood}33` : "none",
-        textTransform: "uppercase",
-        position: "relative",
-        overflow: "hidden",
-      }}
-    >
-      <div style={{
-        position: "absolute", top: 0,
-        left: hovered ? "120%" : "-60%",
-        width: "40%", height: "100%",
-        background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.07), transparent)",
-        transition: "left 0.4s ease",
-        pointerEvents: "none",
-      }} />
-      {children}
-    </button>
-  )
-}
 
 export default function Home({ onEnterGame }) {
   const [mode, setMode] = useState(null)
@@ -129,14 +80,10 @@ export default function Home({ onEnterGame }) {
 
   return (
     <div style={{
-      minHeight: "100vh",
-      width: "100%",
-      position: "relative",
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
-      overflow: "hidden",
+      minHeight: '100vh', background: '#080810',
+      backgroundImage: 'radial-gradient(ellipse at 50% -10%, #1a0a2e 0%, #080810 60%)',
+      display: 'flex', flexDirection: 'column', alignItems: 'center',
+      justifyContent: 'center', padding: '24px',
     }}>
       <div style={{ textAlign: 'center', marginBottom: '48px' }}>
         <div style={{ fontSize: '11px', color: '#f97316', letterSpacing: '7px', fontFamily: 'Orbitron, monospace', marginBottom: '6px', opacity: 0.8 }}>
@@ -155,90 +102,46 @@ export default function Home({ onEnterGame }) {
         </div>
       </div>
 
-        {/* LANDING */}
+      <div style={{ width: '100%', maxWidth: '480px' }}>
         {!mode && (
-          <>
-            <div style={{
-              textAlign: "center", marginBottom: "10px",
-              animation: "revealTitle 0.9s cubic-bezier(.22,1,.36,1) 0.15s both",
-            }}>
-              <span style={{
-                fontFamily: "'Macqueen', cursive",
-                fontSize: "clamp(3.5rem, 16vw, 5.5rem)",
-                letterSpacing: "2px",
-                color: C.cream,
-                textShadow: `0 0 40px ${C.blood}55, 0 2px 0 ${C.deepRed}`,
-              }}>OVER</span>
-              <span style={{
-                fontFamily: "'Macqueen', cursive",
-                fontSize: "clamp(3.5rem, 16vw, 5.5rem)",
-                letterSpacing: "2px",
-                color: C.blood,
-                textShadow: `0 0 40px ${C.blood}88, 0 2px 0 ${C.deepRed}`,
-              }}>TAKE</span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <button onClick={() => setMode('create')} style={btnStyle('#f97316')}>
+              🏁 Create Room
+            </button>
+            <button onClick={() => setMode('join')} style={btnStyle('#3b82f6')}>
+              🚗 Join Room
+            </button>
+            <div style={{ marginTop: '20px', background: '#0d0d1a', border: '1px solid #1f2937', borderRadius: '14px', padding: '18px' }}>
+              <div style={{ color: '#f97316', fontSize: '10px', letterSpacing: '3px', fontFamily: 'Orbitron, monospace', marginBottom: '14px' }}>POWER-UPS</div>
+              {Object.values(POWERUPS).map(p => (
+                <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+                  <span style={{ fontSize: '20px' }}>{p.emoji}</span>
+                  <div>
+                    <div style={{ color: p.color, fontSize: '11px', fontFamily: 'Orbitron, monospace', fontWeight: 700 }}>{p.name}</div>
+                    <div style={{ color: '#6b7280', fontSize: '12px', fontFamily: 'Exo 2, sans-serif' }}>{p.desc}</div>
+                  </div>
+                </div>
+              ))}
             </div>
-
-            <div style={{
-              display: "flex", alignItems: "center", gap: "10px",
-              width: "100%", margin: "4px 0 32px",
-              animation: "fadeIn 0.5s 0.4s ease both",
-            }}>
-              <div style={{ flex: 1, height: "1px", background: `linear-gradient(to right, transparent, ${C.charcoal})` }} />
-              <span style={{
-                fontFamily: "'Arena', sans-serif",
-                fontSize: "9px", letterSpacing: "4px",
-                color: C.charcoal, fontWeight: 300,
-                whiteSpace: "nowrap",
-              }}>REVISION IN THE FAST LANE</span>
-              <div style={{ flex: 1, height: "1px", background: `linear-gradient(to left, transparent, ${C.charcoal})` }} />
-            </div>
-
-            <div style={{
-              display: "flex", flexDirection: "column", gap: "12px",
-              width: "100%",
-              animation: "fadeUp 0.5s 0.4s ease both",
-            }}>
-              <BigButton primary onClick={() => setMode('create')}>
-                Create Room
-              </BigButton>
-              <BigButton onClick={() => setMode('join')}>
-                Join Room
-              </BigButton>
-            </div>
-          </>
+          </div>
         )}
 
-        {/* FORM */}
         {mode && (
-          <div style={{ animation: "slideIn 0.3s ease both", width: "100%" }}>
-            <button className="back-btn" onClick={() => { setMode(null); setError('') }}>
-              ← Back
-            </button>
+          <div style={{ background: '#0d0d1a', border: '1px solid #1f2937', borderRadius: '20px', padding: '28px' }}>
+            <button onClick={() => { setMode(null); setError('') }} style={{
+              background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer',
+              fontFamily: 'Exo 2, sans-serif', fontSize: '13px', marginBottom: '20px', padding: 0,
+            }}>← Back</button>
 
-            <div style={{ textAlign: "center", margin: "20px 0 28px" }}>
-              <div style={{
-                fontFamily: "'Macqueen', cursive",
-                fontSize: "2rem", letterSpacing: "3px",
-                color: C.cream,
-                textShadow: `0 0 20px ${C.blood}44`,
-              }}>
-                {mode === 'create' ? 'CREATE ROOM' : 'JOIN ROOM'}
-              </div>
-              <div style={{
-                height: "1px", marginTop: "10px",
-                background: `linear-gradient(90deg, transparent, ${C.tan}55, transparent)`,
-              }} />
+            <div style={{ color: '#f97316', fontFamily: 'Orbitron, monospace', fontSize: '11px', letterSpacing: '3px', marginBottom: '20px' }}>
+              {mode === 'create' ? 'CREATE ROOM' : 'JOIN ROOM'}
             </div>
 
-            {/* Name */}
-            <div style={{ marginBottom: "14px" }}>
-              <label style={labelStyle}>DRIVER NAME</label>
-              <input
-                value={playerName}
-                onChange={e => setPlayerName(e.target.value)}
+            <div style={{ marginBottom: '14px' }}>
+              <label style={labelStyle}>YOUR NAME</label>
+              <input value={playerName} onChange={e => setPlayerName(e.target.value)}
                 placeholder="Enter your racing name"
-                style={inputStyle}
-              />
+                style={inputStyle} />
             </div>
 
             {mode === 'create' && (
@@ -286,78 +189,23 @@ export default function Home({ onEnterGame }) {
             )}
 
             {mode === 'join' && (
-              <div style={{ marginBottom: "14px" }}>
+              <div style={{ marginBottom: '14px' }}>
                 <label style={labelStyle}>ROOM CODE</label>
-                <input
-                  value={joinCode}
+                <input value={joinCode}
                   onChange={e => setJoinCode(e.target.value.toUpperCase())}
-                  placeholder="A1B2C3"
+                  placeholder="e.g. A1B2C3"
                   maxLength={6}
-                  style={{
-                    ...inputStyle,
-                    fontFamily: "'Arena', sans-serif",
-                    fontSize: "22px",
-                    letterSpacing: "10px",
-                    textAlign: "center",
-                    color: C.pink,
-                  }}
-                />
-              </div>
-            )}
-
-            {/* PDF upload */}
-            {mode === 'create' && (
-              <div style={{ marginBottom: "20px" }}>
-                <label style={labelStyle}>REVISION NOTES</label>
-                <div
-                  onClick={() => fileRef.current.click()}
-                  style={{
-                    border: `1px dashed ${pdfFile ? C.pink : C.deepRed}`,
-                    borderRadius: "3px", padding: "20px",
-                    textAlign: "center", cursor: "pointer",
-                    background: "#0a0303",
-                    transition: "border-color 0.2s",
-                  }}>
-                  {generatingQ ? (
-                    <>
-                      <div style={{ fontSize: "22px", marginBottom: "6px" }}>⚡</div>
-                      <div style={{ fontFamily: "'Arena', sans-serif", color: C.pink, fontSize: "12px", letterSpacing: "3px" }}>GENERATING QUESTIONS...</div>
-                    </>
-                  ) : questions ? (
-                    <>
-                      <div style={{ fontSize: "22px", marginBottom: "6px" }}>✅</div>
-                      <div style={{ fontFamily: "'Arena', sans-serif", color: C.pink, fontSize: "12px", letterSpacing: "2px" }}>
-                        {pdfFile?.name} — {questions.length} questions ready
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div style={{ fontSize: "22px", marginBottom: "6px" }}>📄</div>
-                      <div style={{ fontFamily: "'Arena', sans-serif", color: C.warmGrey, fontSize: "12px", letterSpacing: "3px" }}>UPLOAD PDF</div>
-                      <div style={{ fontFamily: "'Arena', sans-serif", color: C.charcoal, fontSize: "11px", marginTop: "3px", fontStyle: "italic" }}>AI generates your questions</div>
-                    </>
-                  )}
-                  <input ref={fileRef} type="file" accept=".pdf" onChange={handlePDF} style={{ display: "none" }} />
-                </div>
-                {!pdfFile && !generatingQ && (
-                  <div style={{ color: C.charcoal, fontSize: "11px", fontFamily: "'Arena', sans-serif", marginTop: "6px", textAlign: "center", fontStyle: "italic" }}>
-                    No PDF? Sample questions will be used.
-                  </div>
-                )}
+                  style={{ ...inputStyle, fontFamily: 'Orbitron, monospace', letterSpacing: '6px', fontSize: '20px' }} />
               </div>
             )}
 
             {error && (
-              <div style={{
-                color: C.blood, fontFamily: "'Arena', sans-serif",
-                fontSize: "13px", marginBottom: "14px", letterSpacing: "1px",
-              }}>
+              <div style={{ color: '#ef4444', fontFamily: 'Exo 2, sans-serif', fontSize: '13px', marginBottom: '14px' }}>
                 {error}
               </div>
             )}
 
-            <BigButton
-              primary
+            <button
               onClick={mode === 'create' ? handleCreate : handleJoin}
               disabled={loading || generatingQ}
               style={btnStyle(loading || generatingQ ? '#374151' : '#f97316')}>
@@ -365,24 +213,27 @@ export default function Home({ onEnterGame }) {
             </button>
           </div>
         )}
-
       </div>
     </div>
   )
 }
 
+const btnStyle = (bg) => ({
+  width: '100%', padding: '16px', borderRadius: '12px', border: 'none',
+  background: bg, color: bg === '#374151' ? '#6b7280' : '#000',
+  fontFamily: 'Orbitron, monospace', fontWeight: 700, fontSize: '14px',
+  letterSpacing: '2px', cursor: 'pointer', transition: 'all 0.2s',
+  boxShadow: bg !== '#374151' ? `0 0 20px ${bg}44` : 'none',
+})
+
 const labelStyle = {
-  display: "block", fontSize: "9px", letterSpacing: "4px",
-  color: "#5B514F", marginBottom: "7px",
-  fontFamily: "'Arena', sans-serif",
+  display: 'block', color: '#6b7280', fontSize: '10px',
+  letterSpacing: '3px', fontFamily: 'Orbitron, monospace', marginBottom: '8px',
 }
 
 const inputStyle = {
-  width: "100%", padding: "11px 16px",
-  background: "#0a0303",
-  border: "1px solid #761212",
-  borderRadius: "3px", color: "#F2E8D9",
-  fontFamily: "'Arena', sans-serif",
-  fontSize: "16px", letterSpacing: "1px",
-  boxSizing: "border-box",
+  width: '100%', padding: '12px 16px', borderRadius: '10px',
+  border: '1px solid #374151', background: '#080812',
+  color: '#f9fafb', fontFamily: 'Exo 2, sans-serif', fontSize: '16px',
+  outline: 'none', boxSizing: 'border-box',
 }

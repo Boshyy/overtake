@@ -55,4 +55,4 @@ export async function extractTextFromPDF(base64Data) {
   })
   const data = await response.json()
   return data.content.map(i => i.text || '').join('')
-
+}
