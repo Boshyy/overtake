@@ -145,13 +145,13 @@ export default function F1Track({ players, currentPlayerIndex }) {
     <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <svg
         viewBox="0 0 600 400"
-        style={{ width: '100%', height: '100%', maxHeight: '100%', filter: 'drop-shadow(0 0 30px rgba(249,115,22,0.1))' }}
+        style={{ width: '100%', height: '100%', filter: 'drop-shadow(0 0 30px rgba(179,38,35,0.15))' }}
         preserveAspectRatio="xMidYMid meet"
       >
         <defs>
           <linearGradient id="trackGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#2a2a40" />
-            <stop offset="100%" stopColor="#1e1e30" />
+            <stop offset="0%" stopColor="#1a0a08" />
+            <stop offset="100%" stopColor="#0e0504" />
           </linearGradient>
           <filter id="carGlow" x="-80%" y="-80%" width="260%" height="260%">
             <feGaussianBlur stdDeviation="4" result="blur" />
@@ -164,42 +164,40 @@ export default function F1Track({ players, currentPlayerIndex }) {
         </defs>
 
         {/* Background */}
-        <rect x="0" y="0" width="600" height="400" fill="#080816" />
-        <path d={TRACK_OUTER} fill="#0e0e1e" />
+        <rect x="0" y="0" width="600" height="400" fill="#080405" />
         <path d={TRACK_OUTER} fill="url(#trackGrad)" />
-        <path d={TRACK_INNER} fill="#080816" />
+        <path d={TRACK_INNER} fill="#080405" />
 
-        {/* Outer kerb */}
-        <path d={TRACK_OUTER} fill="none" stroke="#c0392b" strokeWidth="5" strokeDasharray="10 10" opacity="0.6" />
-        <path d={TRACK_OUTER} fill="none" stroke="#ffffff" strokeWidth="5" strokeDasharray="10 10" strokeDashoffset="10" opacity="0.3" />
+        {/* Outer kerb — cream/blood red checkered */}
+        <path d={TRACK_OUTER} fill="none" stroke="#B32623" strokeWidth="5" strokeDasharray="10 10" opacity="0.7" />
+        <path d={TRACK_OUTER} fill="none" stroke="#F2E8D9" strokeWidth="5" strokeDasharray="10 10" strokeDashoffset="10" opacity="0.35" />
 
         {/* Inner kerb */}
-        <path d={TRACK_INNER} fill="none" stroke="#c0392b" strokeWidth="4" strokeDasharray="8 8" opacity="0.5" />
-        <path d={TRACK_INNER} fill="none" stroke="#ffffff" strokeWidth="4" strokeDasharray="8 8" strokeDashoffset="8" opacity="0.22" />
+        <path d={TRACK_INNER} fill="none" stroke="#B32623" strokeWidth="4" strokeDasharray="8 8" opacity="0.55" />
+        <path d={TRACK_INNER} fill="none" stroke="#F2E8D9" strokeWidth="4" strokeDasharray="8 8" strokeDashoffset="8" opacity="0.22" />
 
         {/* Racing line */}
         <polyline
           points={WAYPOINTS.map(([x, y]) => `${x},${y}`).join(' ')}
-          fill="none" stroke="#ffffff" strokeWidth="0.8" strokeDasharray="4 8" opacity="0.1"
+          fill="none" stroke="#BE9F7E" strokeWidth="0.8" strokeDasharray="4 8" opacity="0.08"
         />
 
         {/* Sector markers */}
         {SECTOR_LINES.map((s, i) => (
-          <line key={i} x1={s.x1} y1={s.y1} x2={s.x2} y2={s.y2} stroke="#fbbf24" strokeWidth="2" opacity="0.6" />
+          <line key={i} x1={s.x1} y1={s.y1} x2={s.x2} y2={s.y2} stroke="#BE9F7E" strokeWidth="2" opacity="0.5" />
         ))}
 
         {/* DRS zone */}
-        <rect x={DRS_ZONE.x} y={DRS_ZONE.y} width={DRS_ZONE.width} height={DRS_ZONE.height} rx="2" fill="#22c55e" opacity="0.2" />
+        <rect x={DRS_ZONE.x} y={DRS_ZONE.y} width={DRS_ZONE.width} height={DRS_ZONE.height} rx="2" fill="#BB7780" opacity="0.18" />
         <text x={DRS_ZONE.x + DRS_ZONE.width / 2} y={DRS_ZONE.y + 7.5} textAnchor="middle"
-          fontSize="6" fontFamily="Orbitron, monospace" fontWeight="700" fill="#22c55e" opacity="0.8">DRS</text>
+          fontSize="6" fontFamily="'Arena', monospace" fontWeight="700" fill="#BB7780" opacity="0.9">DRS</text>
 
-        {/* Start/finish */}
-        <rect x="232" y="50" width="3" height="32" fill="#ffffff" opacity="0.9" />
+        {/* Start/finish line — cream/black checkered */}
         {[0,1,2,3].map(row => [0,1].map(col => (
           <rect key={`cf-${row}-${col}`} x={232 + col*1.5} y={50 + row*8} width="1.5" height="8"
-            fill={(row+col)%2===0 ? '#ffffff' : '#000000'} opacity="0.9" />
+            fill={(row+col)%2===0 ? '#F2E8D9' : '#080405'} opacity="0.9" />
         )))}
-        <text x="238" y="94" fontSize="6.5" fontFamily="Orbitron, monospace" fontWeight="700" fill="#ffffff" opacity="0.5">S/F</text>
+        <text x="238" y="94" fontSize="6.5" fontFamily="'Arena', sans-serif" fontWeight="700" fill="#BE9F7E" opacity="0.5">S/F</text>
 
         {/* Turn numbers */}
         {[
@@ -208,14 +206,14 @@ export default function F1Track({ players, currentPlayerIndex }) {
           { n:'17', x:16, y:240 }, { n:'19', x:62, y:152 },
         ].map(t => (
           <text key={t.n} x={t.x} y={t.y} textAnchor="middle"
-            fontSize="8" fontFamily="Orbitron, monospace" fontWeight="700" fill="#ffffff" opacity="0.18">T{t.n}</text>
+            fontSize="8" fontFamily="'Arena', sans-serif" fontWeight="700" fill="#BE9F7E" opacity="0.2">T{t.n}</text>
         ))}
 
         {/* Infield text */}
-        <text x="270" y="195" textAnchor="middle" fontSize="14" fontFamily="Orbitron, monospace"
-          fontWeight="900" fill="#f97316" opacity="0.45" letterSpacing="3">OVERTAKE</text>
-        <text x="270" y="214" textAnchor="middle" fontSize="8" fontFamily="Orbitron, monospace"
-          fontWeight="400" fill="#ffffff" opacity="0.12" letterSpacing="2">CIRCUIT</text>
+        <text x="270" y="195" textAnchor="middle" fontSize="14" fontFamily="'Arena', sans-serif"
+          fontWeight="900" fill="#BB7780" opacity="0.35" letterSpacing="3">OVERTAKE</text>
+        <text x="270" y="214" textAnchor="middle" fontSize="8" fontFamily="'Arena', sans-serif"
+          fontWeight="400" fill="#F2E8D9" opacity="0.1" letterSpacing="2">CIRCUIT</text>
 
         {/* Cars — rendered back to front by position (lower position first) */}
         {[...players]
@@ -228,7 +226,7 @@ export default function F1Track({ players, currentPlayerIndex }) {
             const y = pos.y + offset.dy
             const isActive = i === currentPlayerIndex
             const isBoosting = player.boosting
-            const color = PLAYER_COLORS[i] || '#f97316'
+            const color = PLAYER_COLORS[i] || '#BB7780'
             const angle = getAngle(player.position || 0)
 
             return (
@@ -266,22 +264,22 @@ export default function F1Track({ players, currentPlayerIndex }) {
                   <rect x="-8" y="-3.5" width="16" height="7" rx="2.5" fill={color} />
                   {/* Cockpit */}
                   <rect x="-2" y="-2.5" width="6" height="5" rx="1.5"
-                    fill={isActive ? '#ffffff' : '#ffffffaa'} opacity="0.95" />
+                    fill={isActive ? '#F2E8D9' : '#F2E8D9aa'} opacity="0.95" />
                   {/* Front wing */}
                   <rect x="7" y="-4.5" width="3" height="9" rx="1" fill={color} opacity="0.85" />
                   {/* Rear wing */}
                   <rect x="-11" y="-4.5" width="2.5" height="9" rx="1" fill={color} opacity="0.85" />
                   {/* Wheels */}
-                  <rect x="-6" y="-5" width="3" height="2.5" rx="1" fill="#111" />
-                  <rect x="-6" y="2.5" width="3" height="2.5" rx="1" fill="#111" />
-                  <rect x="2" y="-5" width="3" height="2.5" rx="1" fill="#111" />
-                  <rect x="2" y="2.5" width="3" height="2.5" rx="1" fill="#111" />
+                  <rect x="-6" y="-5" width="3" height="2.5" rx="1" fill="#0e0504" />
+                  <rect x="-6" y="2.5" width="3" height="2.5" rx="1" fill="#0e0504" />
+                  <rect x="2" y="-5" width="3" height="2.5" rx="1" fill="#0e0504" />
+                  <rect x="2" y="2.5" width="3" height="2.5" rx="1" fill="#0e0504" />
                 </g>
 
                 {/* Name badge */}
-                <circle cx="0" cy="-11" r="6" fill="#080816" stroke={color} strokeWidth="1.5" />
+                <circle cx="0" cy="-11" r="6" fill="#080405" stroke={color} strokeWidth="1.5" />
                 <text x="0" y="-8.8" textAnchor="middle"
-                  fontSize="5.5" fontFamily="Orbitron, monospace" fontWeight="900" fill={color}>
+                  fontSize="5.5" fontFamily="'Arena', sans-serif" fontWeight="900" fill={color}>
                   {i + 1}
                 </text>
               </g>

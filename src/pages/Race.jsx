@@ -3,6 +3,20 @@ import { subscribeRoom, submitAnswer, usePowerup as firebaseUsePowerup, tickMove
 import { PLAYER_COLORS, QUESTION_TIME, POWERUPS } from '../lib/constants.js'
 import F1Track from '../components/F1Track.jsx'
 import QuestionCard from '../components/QuestionCard.jsx'
+import Standings from '../components/Standings.jsx'
+
+const C = {
+  blood:    "#B32623",
+  deepRed:  "#761212",
+  darkest:  "#080405",
+  darkWine: "#2F1416",
+  crimson:  "#5C0B0D",
+  tan:      "#BE9F7E",
+  warmGrey: "#888278",
+  charcoal: "#5B514F",
+  cream:    "#F2E8D9",
+  pink:     "#BB7780",
+}
 
 export default function Race({ roomCode, playerName, onFinish }) {
   const [room, setRoom] = useState(null)
@@ -37,14 +51,12 @@ export default function Race({ roomCode, playerName, onFinish }) {
     return unsub
   }, [roomCode])
 
-  // Work out if this client is the host (first player drives the tick)
   useEffect(() => {
     if (!room) return
     const playerNames = Object.keys(room.players || {})
     isHostRef.current = playerNames[0] === playerName
   }, [room, playerName])
 
-  // Host ticks all cars forward every second
   useEffect(() => {
     if (!room || room.status !== 'racing') return
     if (!isHostRef.current) return
@@ -52,7 +64,6 @@ export default function Race({ roomCode, playerName, onFinish }) {
     return () => clearInterval(tickRef.current)
   }, [room?.status, roomCode])
 
-  // Reset timer when question changes
   useEffect(() => {
     if (!room) return
     const qKey = `${room.currentQuestionIndex}-${room.currentPlayerIndex}`
@@ -75,7 +86,6 @@ export default function Race({ roomCode, playerName, onFinish }) {
     }
   }, [room?.currentQuestionIndex, room?.currentPlayerIndex, room?.questionPhase])
 
-  // Race finished
   useEffect(() => {
     if (room?.status === 'finished') {
       clearInterval(timerRef.current)
@@ -84,13 +94,11 @@ export default function Race({ roomCode, playerName, onFinish }) {
     }
   }, [room?.status])
 
-  // Cleanup on unmount
   useEffect(() => () => {
     clearInterval(timerRef.current)
     clearInterval(tickRef.current)
   }, [])
 
-  // handleAnswer MUST be above early returns (Rules of Hooks)
   const handleAnswer = useCallback(async (correct, powerup) => {
     if (hasAnswered) return
     setHasAnswered(true)
@@ -98,7 +106,6 @@ export default function Race({ roomCode, playerName, onFinish }) {
     await submitAnswer(roomCode, playerName, correct, powerup)
   }, [hasAnswered, roomCode, playerName])
 
-  // Auto-submit on timeout if it's this player's turn
   useEffect(() => {
     if (timeLeft === 0 && !hasAnswered && room) {
       const names = Object.keys(room.players || {})
@@ -128,133 +135,196 @@ export default function Race({ roomCode, playerName, onFinish }) {
     await firebaseUsePowerup(roomCode, playerName, puId)
   }
 
-  // --- all hooks above, conditionals below ---
-
+  // ── Countdown screen ──────────────────────────────────────────────────────
   if (!raceStarted) {
     return (
       <div style={{
-        minHeight: '100vh', background: '#080810',
+        minHeight: '100vh', width: '100%', position: 'relative',
         display: 'flex', flexDirection: 'column', alignItems: 'center',
-        justifyContent: 'center', gap: '24px',
+        justifyContent: 'center', gap: '24px', overflow: 'hidden',
       }}>
-        <div style={{ fontFamily: 'Orbitron, monospace', fontWeight: 900, fontSize: '18px', color: '#fff' }}>
-          OVER<span style={{ color: '#f97316' }}>TAKE</span>
-        </div>
-        <div style={{
-          fontFamily: 'Orbitron, monospace', fontWeight: 900,
-          fontSize: 'clamp(5rem, 20vw, 10rem)', color: '#f97316',
-          textShadow: '0 0 60px rgba(249,115,22,0.8)',
-          animation: 'pulse 1s infinite',
-        }}>
-          {countdown}
-        </div>
-        <div style={{ color: '#9ca3af', fontFamily: 'Exo 2, sans-serif', fontSize: '16px' }}>
-          Race starting soon...
-        </div>
-        <div style={{
-          background: '#0d0d1a', border: '1px solid #f9731633',
-          borderRadius: '14px', padding: '16px 24px', textAlign: 'center',
-          maxWidth: '320px',
-        }}>
-          <div style={{ fontSize: '28px', marginBottom: '8px' }}>🎙️</div>
-          <div style={{ color: '#f97316', fontFamily: 'Orbitron, monospace', fontSize: '11px', letterSpacing: '2px', marginBottom: '6px' }}>
-            MICROPHONE ACCESS
+        <style>{`
+          @font-face { font-family: 'Macqueen'; src: url('/src/assets/fonts/MacqueenPersonalUse-woojw.ttf') format('truetype'); }
+          @font-face { font-family: 'Arena'; src: url('/src/assets/fonts/Arena-rvwaK.ttf') format('truetype'); }
+          @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.08)} }
+          @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+        `}</style>
+        <div style={{ position:'fixed', top:0, left:0, right:0, height:'24px', zIndex:100, backgroundImage:`repeating-conic-gradient(${C.cream} 0% 25%, ${C.blood} 0% 50%)`, backgroundSize:'24px 24px' }} />
+        <div style={{ position:'fixed', bottom:0, left:0, right:0, height:'24px', zIndex:100, backgroundImage:`repeating-conic-gradient(${C.cream} 0% 25%, ${C.blood} 0% 50%)`, backgroundSize:'24px 24px', transform:'scaleY(-1)' }} />
+        <div style={{ position:'fixed', inset:0, zIndex:0, background:`radial-gradient(ellipse at 50% 40%, #1a0a08 0%, ${C.darkest} 70%)` }} />
+        <div style={{ position:'fixed', left:0, top:0, bottom:0, width:'3px', background:`linear-gradient(to bottom, transparent, ${C.blood}, transparent)`, opacity:0.5, zIndex:1 }} />
+        <div style={{ position:'fixed', right:0, top:0, bottom:0, width:'3px', background:`linear-gradient(to bottom, transparent, ${C.blood}, transparent)`, opacity:0.5, zIndex:1 }} />
+        <div style={{ position:'relative', zIndex:10, textAlign:'center', animation:'fadeIn 0.5s ease both' }}>
+          <div style={{ fontFamily:"'Macqueen', cursive", fontSize:'18px', color:C.cream, letterSpacing:'4px', marginBottom:'32px' }}>
+            OVER<span style={{ color:C.blood }}>TAKE</span>
           </div>
-          <div style={{ color: '#9ca3af', fontFamily: 'Exo 2, sans-serif', fontSize: '13px' }}>
-            Please allow microphone access when prompted so you can answer questions by voice!
+          <div style={{ fontFamily:"'Macqueen', cursive", fontSize:'clamp(5rem, 20vw, 10rem)', color:C.pink, textShadow:`0 0 60px ${C.pink}99`, animation:'pulse 1s infinite', lineHeight:1 }}>
+            {countdown}
+          </div>
+          <div style={{ color:C.charcoal, fontFamily:"'Arena', sans-serif", fontSize:'14px', letterSpacing:'4px', marginTop:'24px', textTransform:'uppercase' }}>
+            Race Starting Soon
+          </div>
+          <div style={{ marginTop:'32px', background:'#0a0303', border:`1px solid ${C.crimson}`, borderRadius:'4px', padding:'16px 24px', maxWidth:'320px', margin:'32px auto 0' }}>
+            <div style={{ fontSize:'24px', marginBottom:'8px' }}>🎙️</div>
+            <div style={{ color:C.pink, fontFamily:"'Arena', sans-serif", fontSize:'11px', letterSpacing:'3px', marginBottom:'6px' }}>MICROPHONE ACCESS</div>
+            <div style={{ color:C.charcoal, fontFamily:"'Arena', sans-serif", fontSize:'12px', letterSpacing:'1px', lineHeight:1.6 }}>Allow microphone access to answer questions by voice</div>
           </div>
         </div>
-        <style>{`@keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.05)} }`}</style>
       </div>
     )
   }
 
+  // ── Race screen ───────────────────────────────────────────────────────────
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Barlow+Condensed:wght@400;600;700&display=swap');
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        @font-face { font-family: 'Macqueen'; src: url('/src/assets/fonts/MacqueenPersonalUse-woojw.ttf') format('truetype'); }
+        @font-face { font-family: 'Arena'; src: url('/src/assets/fonts/Arena-rvwaK.ttf') format('truetype'); }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
         .race-root {
           width: 100vw; height: 100vh; overflow: hidden;
-          background: #05050f; display: flex; flex-direction: column;
-          font-family: 'Barlow Condensed', sans-serif;
+          background: ${C.darkest}; display: flex; flex-direction: column;
+          font-family: 'Arena', sans-serif;
         }
+
+        /* Slim top bar */
         .race-header {
-          height: 44px; min-height: 44px; background: #08081a;
-          border-bottom: 1px solid #1a1a35; display: flex;
-          align-items: center; justify-content: space-between; padding: 0 20px; z-index: 10;
+          height: 40px; min-height: 40px;
+          background: #0a0303;
+          border-bottom: 1px solid ${C.darkWine};
+          display: flex; align-items: center; justify-content: space-between;
+          padding: 0 16px; flex-shrink: 0; z-index: 10;
         }
-        .race-logo { font-family: 'Orbitron', monospace; font-weight: 900; font-size: 15px; color: #fff; letter-spacing: 2px; }
-        .race-logo span { color: #f97316; }
-        .race-meta { display: flex; gap: 24px; align-items: center; }
-        .meta-chip { font-family: 'Orbitron', monospace; font-size: 10px; color: #4b5563; letter-spacing: 1px; }
-        .meta-chip b { color: #f97316; font-weight: 700; }
+        .race-logo { font-family: 'Macqueen', cursive; font-size: 15px; color: ${C.cream}; letter-spacing: 3px; }
+        .race-logo span { color: ${C.blood}; }
+        .race-meta { display: flex; gap: 18px; align-items: center; }
+        .meta-chip { font-family: 'Arena', sans-serif; font-size: 10px; color: ${C.charcoal}; letter-spacing: 2px; text-transform: uppercase; }
+        .meta-chip b { color: ${C.pink}; }
 
-        .race-grid {
-          flex: 1; display: grid;
-          grid-template-columns: 280px 1fr;
+        /* 2-col grid: left sidebar | right main */
+        .race-body {
+          flex: 1; min-height: 0;
+          display: grid;
+          grid-template-columns: 300px 1fr;
           grid-template-rows: 1fr 1fr;
-          gap: 1px; background: #111125; overflow: hidden;
+          gap: 1px;
+          background: ${C.darkWine};
+          overflow: hidden;
         }
-        .quadrant { background: #07071a; overflow: hidden; display: flex; flex-direction: column; position: relative; }
-        .quadrant-label { font-family: 'Orbitron', monospace; font-size: 9px; letter-spacing: 3px; color: #f97316; padding: 12px 16px 0; opacity: 0.8; }
-        .q-standings { grid-column: 1; grid-row: 1; border-right: 1px solid #111125; border-bottom: 1px solid #111125; }
-        .q-powerups  { grid-column: 1; grid-row: 2; border-right: 1px solid #111125; }
-        .q-track     { grid-column: 2; grid-row: 1; border-bottom: 1px solid #111125; }
-        .q-question  { grid-column: 2; grid-row: 2; }
-        .quadrant-inner { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 8px 14px 14px; scrollbar-width: thin; scrollbar-color: #1f2937 transparent; }
-        .quadrant-inner::-webkit-scrollbar { width: 4px; }
-        .quadrant-inner::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 2px; }
-        .q-question .quadrant-inner { overflow-y: hidden; padding: 6px 10px 10px; display: flex; flex-direction: column; }
 
-        @keyframes slide-in { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
-        @keyframes boost-flash { 0%,100%{opacity:1} 50%{opacity:0.5} }
-        @keyframes turn-pulse { 0%,100%{box-shadow:0 0 0 0 rgba(249,115,22,0)} 50%{box-shadow:0 0 12px 3px rgba(249,115,22,0.3)} }
-        .boosting-row { animation: boost-flash 0.35s ease infinite; }
-        .active-turn  { animation: turn-pulse 1.5s ease infinite; }
+        /* Each quadrant */
+        .panel {
+          background: ${C.darkest};
+          display: flex; flex-direction: column;
+          overflow: hidden; min-height: 0;
+        }
+        .panel-label {
+          font-family: 'Arena', sans-serif; font-size: 9px;
+          letter-spacing: 4px; color: ${C.charcoal};
+          padding: 8px 14px 4px; text-transform: uppercase; flex-shrink: 0;
+        }
+        .panel-scroll {
+          flex: 1; overflow-y: auto; overflow-x: hidden;
+          padding: 6px 12px 12px;
+          scrollbar-width: thin; scrollbar-color: ${C.darkWine} transparent;
+          min-height: 0;
+        }
+        .panel-scroll::-webkit-scrollbar { width: 3px; }
+        .panel-scroll::-webkit-scrollbar-thumb { background: ${C.darkWine}; border-radius: 2px; }
+
+        /* Powerup buttons */
+        .pu-btn {
+          display: flex; align-items: center; gap: 10px;
+          padding: 10px 14px; border-radius: 4px; cursor: pointer;
+          border: 1px solid ${C.darkWine}; background: #0a0303;
+          transition: all 0.2s; width: 100%; text-align: left;
+          margin-bottom: 8px;
+        }
+        .pu-btn:hover { border-color: ${C.charcoal}; background: #0e0303; }
+        .pu-btn.active { background: #1a0505; }
+        .pu-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        @keyframes boost-flash { 0%,100%{opacity:1} 50%{opacity:0.4} }
       `}</style>
 
       <div className="race-root">
+
+        {/* Top checker strip */}
+        <div style={{ height:'5px', flexShrink:0, backgroundImage:`repeating-conic-gradient(${C.cream} 0% 25%, ${C.blood} 0% 50%)`, backgroundSize:'10px 10px', opacity:0.9 }} />
+
+        {/* Header */}
         <header className="race-header">
           <div className="race-logo">OVER<span>TAKE</span></div>
           <div className="race-meta">
             <div className="meta-chip">ROOM <b>{roomCode}</b></div>
             <div className="meta-chip">ROUND <b>{room.roundNumber || 1}</b></div>
-            <div className="meta-chip" style={{ color: isMyTurn ? '#22c55e' : '#4b5563' }}>
+            <div className="meta-chip" style={{ color: isMyTurn ? '#22c55e' : C.charcoal }}>
               {isMyTurn ? '● YOUR TURN' : `● ${currentTurnName?.toUpperCase()}'S TURN`}
             </div>
           </div>
         </header>
 
-        <div className="race-grid">
+        {/* 4-panel body */}
+        <div className="race-body">
 
-          <div className="quadrant q-standings">
-            <div className="quadrant-label">STANDINGS</div>
-            <div className="quadrant-inner">
-              <StandingsCompact players={players} currentPlayerName={playerName} currentTurnName={currentTurnName} />
+          {/* ── TOP-LEFT: Standings ── */}
+          <div className="panel">
+            <div className="panel-label">Standings</div>
+            <div className="panel-scroll">
+              <Standings players={players} currentPlayerName={playerName} />
             </div>
           </div>
 
-          <div className="quadrant q-powerups">
-            <div className="quadrant-label">POWER-UPS</div>
-            <div className="quadrant-inner">
-              <PowerupsPanel myPowerups={myPowerups} activePowerup={activePowerup} isMyTurn={isMyTurn && !hasAnswered} onUsePowerup={handleUsePowerup} />
-            </div>
-          </div>
-
-          <div className="quadrant q-track">
-            <div className="quadrant-label">CIRCUIT</div>
-            <div className="quadrant-inner" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {/* ── TOP-RIGHT: Circuit ── */}
+          <div className="panel">
+            <div className="panel-label">Circuit</div>
+            <div className="panel-scroll" style={{ display:'flex', alignItems:'center', justifyContent:'center', padding:'0' }}>
               <F1Track players={players} currentPlayerIndex={room.currentPlayerIndex || 0} />
             </div>
           </div>
 
-          <div className="quadrant q-question">
-            <div className="quadrant-label">
-              {isMyTurn ? 'YOUR QUESTION' : `${currentTurnName?.toUpperCase()}'S QUESTION`}
+          {/* ── BOTTOM-LEFT: Power-Ups ── */}
+          <div className="panel">
+            <div className="panel-label">Power-Ups</div>
+            <div className="panel-scroll">
+              {myPowerups.length === 0 ? (
+                <div style={{ color:C.charcoal, fontFamily:"'Arena', sans-serif", fontSize:'11px', letterSpacing:'1px', fontStyle:'italic', paddingTop:'4px' }}>
+                  Answer correctly to earn power-ups
+                </div>
+              ) : (
+                myPowerups.map((pu, i) => {
+                  const def = POWERUPS[pu]
+                  const isActive = activePowerup === pu
+                  return (
+                    <button key={i}
+                      className={`pu-btn${isActive ? ' active' : ''}`}
+                      onClick={() => isMyTurn && !hasAnswered && handleUsePowerup(pu)}
+                      disabled={!isMyTurn || hasAnswered}
+                      style={{ border:`1px solid ${isActive ? def?.color + '88' : C.darkWine}`, background: isActive ? `${def?.color}18` : '#0a0303' }}
+                    >
+                      <span style={{ fontSize:'22px' }}>{def?.emoji}</span>
+                      <div>
+                        <div style={{ fontFamily:"'Arena', sans-serif", fontSize:'12px', letterSpacing:'2px', color: def?.color || C.pink, textTransform:'uppercase' }}>
+                          {def?.name}
+                        </div>
+                        <div style={{ fontFamily:"'Arena', sans-serif", fontSize:'10px', color:C.charcoal, letterSpacing:'1px', marginTop:'2px' }}>
+                          {def?.desc}
+                        </div>
+                      </div>
+                    </button>
+                  )
+                })
+              )}
             </div>
-            <div className="quadrant-inner">
+          </div>
+
+          {/* ── BOTTOM-RIGHT: Question ── */}
+          <div className="panel">
+            <div className="panel-label">
+              {isMyTurn ? 'Your Question' : `${currentTurnName?.toUpperCase()}'s Question`}
+            </div>
+            <div className="panel-scroll">
               {currentQuestion && (
                 <QuestionCard
                   question={currentQuestion}
@@ -262,7 +332,7 @@ export default function Race({ roomCode, playerName, onFinish }) {
                   maxTime={maxTime}
                   isMyTurn={isMyTurn && !hasAnswered}
                   currentPlayerName={currentTurnName}
-                  currentPlayerColor={PLAYER_COLORS[currentPlayerSlot] || '#f97316'}
+                  currentPlayerColor={PLAYER_COLORS[currentPlayerSlot] || C.pink}
                   myPowerups={isMyTurn ? myPowerups : []}
                   onAnswer={handleAnswer}
                   onUsePowerup={handleUsePowerup}
@@ -272,113 +342,22 @@ export default function Race({ roomCode, playerName, onFinish }) {
               )}
             </div>
           </div>
+
         </div>
+
+        {/* Bottom checker strip */}
+        <div style={{ height:'5px', flexShrink:0, backgroundImage:`repeating-conic-gradient(${C.cream} 0% 25%, ${C.blood} 0% 50%)`, backgroundSize:'10px 10px', opacity:0.9, transform:'scaleY(-1)' }} />
+
       </div>
     </>
   )
 }
 
-function StandingsCompact({ players, currentPlayerName, currentTurnName }) {
-  const sorted = [...players].sort((a, b) => b.position - a.position)
-  const MEDALS = ['🥇', '🥈', '🥉', '🏅']
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', paddingTop: '4px' }}>
-      {sorted.map((player, rank) => {
-        const isYou = player.name === currentPlayerName
-        const isTurn = player.name === currentTurnName
-        const colorIdx = players.findIndex(p => p.name === player.name)
-        const color = PLAYER_COLORS[colorIdx] || '#f97316'
-        const pct = Math.round(player.position || 0)
-        const isBoosting = player.boosting
-
-        return (
-          <div key={player.name}
-            className={`${isBoosting ? 'boosting-row' : ''} ${isTurn ? 'active-turn' : ''}`}
-            style={{
-              padding: '10px 12px', borderRadius: '10px',
-              background: isYou ? `${color}18` : '#0f0f22',
-              border: `1px solid ${isTurn ? color + '99' : isYou ? color + '44' : '#1a1a35'}`,
-              transition: 'border 0.3s',
-            }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-              <span style={{ fontSize: '16px', minWidth: '22px' }}>{MEDALS[rank] || '🏅'}</span>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{
-                  fontFamily: 'Orbitron, monospace', fontSize: '11px', fontWeight: 700,
-                  color: isYou ? color : '#c9cce0',
-                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                  display: 'flex', alignItems: 'center', gap: '6px',
-                }}>
-                  {player.name.toUpperCase()}
-                  {isYou && <span style={{ color: '#4b5563', fontWeight: 400, fontSize: '9px' }}>YOU</span>}
-                  {isTurn && <span style={{ fontSize: '9px', color: color }}>▶ TURN</span>}
-                  {isBoosting && <span style={{ fontSize: '10px' }}>🚀</span>}
-                </div>
-              </div>
-              <div style={{
-                fontFamily: 'Orbitron, monospace', fontSize: '11px',
-                color: isBoosting ? '#22c55e' : color, fontWeight: 700, transition: 'color 0.3s',
-              }}>{pct}%</div>
-            </div>
-            <div style={{ background: '#111128', borderRadius: '100px', height: '3px' }}>
-              <div style={{
-                width: `${pct}%`, height: '100%', borderRadius: '100px',
-                background: isBoosting
-                  ? 'linear-gradient(90deg, #22c55e88, #22c55e)'
-                  : `linear-gradient(90deg, ${color}88, ${color})`,
-                transition: 'width 0.9s ease, background 0.3s',
-                boxShadow: isBoosting ? '0 0 8px #22c55e' : isYou ? `0 0 6px ${color}` : 'none',
-              }} />
-            </div>
-          </div>
-        )
-      })}
-    </div>
-  )
-}
-
-function PowerupsPanel({ myPowerups, activePowerup, isMyTurn, onUsePowerup }) {
-  if (!myPowerups.length) {
-    return (
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '10px', paddingTop: '20px', opacity: 0.4 }}>
-        <div style={{ fontSize: '32px' }}>🏁</div>
-        <div style={{ fontFamily: 'Orbitron, monospace', fontSize: '10px', color: '#4b5563', letterSpacing: '1px', textAlign: 'center', lineHeight: 1.6 }}>
-          ANSWER CORRECTLY<br />TO EARN POWER-UPS
-        </div>
-      </div>
-    )
-  }
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', paddingTop: '4px' }}>
-      {myPowerups.map((pu, i) => {
-        const def = POWERUPS[pu]
-        const isActive = activePowerup === pu
-        return (
-          <button key={i} onClick={() => isMyTurn && onUsePowerup(pu)} style={{
-            display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 14px', borderRadius: '10px',
-            background: isActive ? `${def?.color}22` : '#0f0f22',
-            border: `1px solid ${isActive ? def?.color : '#1a1a35'}`,
-            cursor: isMyTurn ? 'pointer' : 'not-allowed', opacity: isMyTurn ? 1 : 0.5,
-            transition: 'all 0.2s', width: '100%', textAlign: 'left',
-          }}>
-            <span style={{ fontSize: '22px' }}>{def?.emoji}</span>
-            <div>
-              <div style={{ fontFamily: 'Orbitron, monospace', fontSize: '10px', fontWeight: 700, color: def?.color || '#f97316', letterSpacing: '1px' }}>{def?.name}</div>
-              <div style={{ fontFamily: 'Barlow Condensed, sans-serif', fontSize: '12px', color: '#6b7280', marginTop: '2px' }}>{def?.desc}</div>
-            </div>
-          </button>
-        )
-      })}
-    </div>
-  )
-}
-
 function Loading() {
   return (
-    <div style={{ width: '100vw', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#05050f', flexDirection: 'column', gap: '16px' }}>
-      <div style={{ width: '40px', height: '40px', borderRadius: '50%', border: '3px solid #1a1a35', borderTop: '3px solid #f97316', animation: 'spin 0.8s linear infinite' }} />
-      <div style={{ color: '#f97316', fontFamily: 'Orbitron, monospace', fontSize: '12px', letterSpacing: '3px' }}>LOADING RACE...</div>
+    <div style={{ width:'100vw', height:'100vh', display:'flex', alignItems:'center', justifyContent:'center', background:'#080405', flexDirection:'column', gap:'16px' }}>
+      <div style={{ width:'40px', height:'40px', borderRadius:'50%', border:'3px solid #2F1416', borderTop:'3px solid #BB7780', animation:'spin 0.8s linear infinite' }} />
+      <div style={{ color:'#BB7780', fontFamily:"'Arena', sans-serif", fontSize:'12px', letterSpacing:'4px', textTransform:'uppercase' }}>Loading Race...</div>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   )
