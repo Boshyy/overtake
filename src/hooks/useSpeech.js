@@ -19,12 +19,17 @@ export function useSpeech() {
     r.continuous = true
     r.interimResults = true
     r.lang = 'en-GB'
+    r.maxAlternatives = 3
     r.onstart = () => setListening(true)
     r.onend = () => setListening(false)
     r.onresult = (e) => {
-      const t = Array.from(e.results).map(r => r[0].transcript).join(' ')
-      setTranscript(t)
-    }
+        const results = Array.from(e.results)
+        const t = results.map(r => {
+            // grab best alternative
+            return Array.from(r).map(alt => alt.transcript).join(' ')
+        }).join(' ')
+        setTranscript(t)
+      }
     recognitionRef.current = r
     try { r.start() } catch (e) { console.warn('SR start failed', e) }
   }, [])
