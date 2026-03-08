@@ -29,7 +29,9 @@ export default function QuestionCard({
     setSubmitted(false)
     setResult(null)
     reset()
-    if (isMyTurn && supported) start()
+    if (isMyTurn && supported) {
+        setTimeout(() => start(), 300)
+    }
     return () => stop()
   }, [question?.q, isMyTurn])
 
