@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { createRoom, joinRoom } from '../lib/game.js'
 import { generateQuestionsFromText, extractTextFromPDF } from '../lib/ai.js'
+import { playVroom } from '../lib/sounds.js'
 
 const C = {
   blood:    "#B32623",
@@ -275,10 +276,10 @@ export default function Home({ onEnterGame }) {
               width: "100%",
               animation: "fadeUp 0.5s 0.4s ease both",
             }}>
-              <BigButton primary onClick={() => setMode('create')}>
+              <BigButton primary onClick={() => { playVroom(); setMode('create') }}>
                 Create Room
               </BigButton>
-              <BigButton onClick={() => setMode('join')}>
+              <BigButton onClick={() => { playVroom(); setMode('join') }}>
                 Join Room
               </BigButton>
             </div>

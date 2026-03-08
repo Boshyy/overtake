@@ -4,6 +4,8 @@ import { PLAYER_COLORS, QUESTION_TIME, POWERUPS } from '../lib/constants.js'
 import F1Track from '../components/F1Track.jsx'
 import QuestionCard from '../components/QuestionCard.jsx'
 import Standings from '../components/Standings.jsx'
+import { playCountdownBeep } from '../lib/sounds.js'
+
 
 const C = {
   blood:    "#B32623",
@@ -32,19 +34,25 @@ export default function Race({ roomCode, playerName, onFinish }) {
   const isHostRef = useRef(false)
 
   useEffect(() => {
-    if (navigator.mediaDevices) {
-      navigator.mediaDevices.getUserMedia({ audio: true })
-        .then(() => console.log('mic granted'))
-        .catch(() => console.log('mic denied'))
-    }
-    const interval = setInterval(() => {
-      setCountdown(prev => {
-        if (prev <= 1) { clearInterval(interval); setRaceStarted(true); return 0 }
-        return prev - 1
-      })
-    }, 1000)
-    return () => clearInterval(interval)
-  }, [])
+  if (navigator.mediaDevices) {
+    navigator.mediaDevices.getUserMedia({ audio: true })
+      .then(() => console.log('mic granted'))
+      .catch(() => console.log('mic denied'))
+  }
+  const interval = setInterval(() => {
+    setCountdown(prev => {
+      if (prev <= 1) {
+        clearInterval(interval)
+        setRaceStarted(true)
+        playCountdownBeep(0)
+        return 0
+      }
+      playCountdownBeep(prev - 1)
+      return prev - 1
+    })
+  }, 1000)
+  return () => clearInterval(interval)
+}, [])
 
   useEffect(() => {
     const unsub = subscribeRoom(roomCode, (data) => setRoom(data))
@@ -65,18 +73,18 @@ export default function Race({ roomCode, playerName, onFinish }) {
   }, [room?.status, roomCode])
 
   useEffect(() => {
-    if (!room) return
-    const qKey = `${room.currentQuestionIndex}-${room.currentPlayerIndex}`
-    if (qKey !== questionKeyRef.current) {
-      questionKeyRef.current = qKey
-      setHasAnswered(false)
-      setActivePowerup(null)
-      const t = QUESTION_TIME
-      setTimeLeft(t)
-      setMaxTime(t)
-      clearInterval(timerRef.current)
-      if (room.questionPhase === 'active') {
-        timerRef.current = setInterval(() => {
+  if (!room || !raceStarted) return
+  const qKey = `${room.currentQuestionIndex}-${room.currentPlayerIndex}`
+  if (qKey !== questionKeyRef.current) {
+    questionKeyRef.current = qKey
+    setHasAnswered(false)
+    setActivePowerup(null)
+    const t = QUESTION_TIME
+    setTimeLeft(t)
+    setMaxTime(t)
+    clearInterval(timerRef.current)
+    if (room.questionPhase === 'active') {
+      timerRef.current = setInterval(() => {
           setTimeLeft(prev => {
             if (prev <= 1) { clearInterval(timerRef.current); return 0 }
             return prev - 1
