@@ -79,10 +79,10 @@ export async function tickMovement(code) {
 
   const now = Date.now()
   const updates = {}
-  let winner = null
 
   Object.entries(room.players || {}).forEach(([name, player]) => {
-    const newPos = Math.min(100, (player.position || 0) + SLOW_ADVANCE)
+    // Cap at 99 — position-based finish removed, game ends via question count
+    const newPos = Math.min(99, (player.position || 0) + SLOW_ADVANCE)
     updates[`players/${name}/position`] = newPos
 
     // Clear expired boost flag
@@ -90,14 +90,7 @@ export async function tickMovement(code) {
       updates[`players/${name}/boosting`] = false
       updates[`players/${name}/boostUntil`] = null
     }
-
-    if (newPos >= 100 && !winner) winner = name
   })
-
-  if (winner) {
-    updates['status'] = 'finished'
-    updates['winner'] = winner
-  }
 
   updates['lastTickTime'] = now
   await update(ref(db, `rooms/${code}`), updates)
@@ -126,22 +119,16 @@ export async function submitAnswer(code, playerName, correct, activePowerup) {
       }
     }
 
-    const newPos = Math.min(100, (player.position || 0) + advance)
+    // Cap at 99 — finish is question-count based, not position based
+    const newPos = Math.min(99, (player.position || 0) + advance)
     updates[`players/${playerName}/position`] = newPos
     updates[`players/${playerName}/boosting`] = true
     updates[`players/${playerName}/boostUntil`] = Date.now() + BOOST_DURATION
-
-    if (newPos >= 100) {
-      updates['status'] = 'finished'
-      updates['winner'] = playerName
-      await update(ref(db, `rooms/${code}`), updates)
-      return
-    }
   }
 
   updates[`players/${playerName}/score`] = (player.score || 0) + (correct ? 1 : 0)
   await update(ref(db, `rooms/${code}`), updates)
-  await advanceTurn(code, room)
+  await advanceTurn(code, room) // always called regardless of correct/wrong
 }
 
 async function advanceTurn(code, room) {
