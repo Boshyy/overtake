@@ -50,14 +50,11 @@ export async function setReady(code, playerName) {
 }
 
 export async function startGame(code) {
-  await update(ref(db, `rooms/${code}`), { status: 'countdown' })
-  setTimeout(async () => {
-    await update(ref(db, `rooms/${code}`), {
-      status: 'racing',
-      questionPhase: 'active',
-      questionStartTime: Date.now(),
-    })
-  }, 3000)
+  await update(ref(db, `rooms/${code}`), {
+    status: 'racing',
+    questionPhase: 'active',
+    questionStartTime: Date.now(),
+  })
 }
 
 export function subscribeRoom(code, cb) {
