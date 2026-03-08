@@ -83,4 +83,63 @@ export async function submitAnswer(code, playerName, correct, activePowerup) {
       if (leader) {
         const steal = Math.round(advance * 0.5)
         const newLeaderPos = Math.max(0, leader.position - steal)
-        await update(ref(db, `rooms/${code}/players/${leader.nam
+        await update(ref(db, `rooms/${code}/players/${leader.name}`), { position: newLeaderPos })
+        advance += steal
+      }
+    }
+  }
+
+  const newPos = Math.min(100, (player.position || 0) + advance)
+  const newScore = (player.score || 0) + (correct ? 1 : 0)
+
+  await update(ref(db, `rooms/${code}/players/${playerName}`), {
+    position: newPos,
+    score: newScore,
+  })
+
+  if (newPos >= 100) {
+    await update(ref(db, `rooms/${code}`), { status: 'finished', winner: playerName })
+    return
+  }
+
+  await advanceTurn(code, room)
+}
+
+async function advanceTurn(code, room) {
+  const playerNames = Object.keys(room.players || {})
+  const nextPlayerIndex = ((room.currentPlayerIndex || 0) + 1) % playerNames.length
+  const nextQuestionIndex = (room.currentQuestionIndex || 0) + 1
+
+  const spawnPowerup = Math.random() < 0.25
+  const puKeys = Object.keys(POWERUPS)
+  const spawnedPU = spawnPowerup ? puKeys[Math.floor(Math.random() * puKeys.length)] : null
+
+  if (spawnedPU) {
+    const nextPlayer = playerNames[nextPlayerIndex]
+    const currentPUs = room.players[nextPlayer]?.powerups || []
+    if (currentPUs.length < 2) {
+      await update(ref(db, `rooms/${code}/players/${nextPlayer}`), {
+        powerups: [...currentPUs, spawnedPU]
+      })
+    }
+  }
+
+  await update(ref(db, `rooms/${code}`), {
+    currentPlayerIndex: nextPlayerIndex,
+    currentQuestionIndex: nextQuestionIndex,
+    questionPhase: 'active',
+    questionStartTime: Date.now(),
+    roundNumber: nextPlayerIndex === 0 ? (room.roundNumber || 1) + 1 : (room.roundNumber || 1),
+  })
+}
+
+export async function usePowerup(code, playerName, powerupId) {
+  const snap = await get(ref(db, `rooms/${code}/players/${playerName}`))
+  const player = snap.val()
+  const idx = (player.powerups || []).indexOf(powerupId)
+  if (idx > -1) {
+    const arr = [...(player.powerups || [])]
+    arr.splice(idx, 1)
+    await update(ref(db, `rooms/${code}/players/${playerName}`), { powerups: arr })
+  }
+}
