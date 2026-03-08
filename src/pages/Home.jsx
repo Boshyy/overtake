@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createRoom, joinRoom } from '../lib/game.js'
+import { generateQuestionsFromText, extractTextFromPDF } from '../lib/ai.js'
 
 const C = {
   blood:    "#B32623",
@@ -12,7 +13,7 @@ const C = {
   charcoal: "#5B514F",
   cream:    "#F2E8D9",
   pink:     "#BB7780",
-};
+}
 
 const SAMPLE_QUESTIONS = [
   { q: 'What is the powerhouse of the cell?', options: ['A) Nucleus', 'B) Mitochondria', 'C) Ribosome', 'D) Golgi body'], a: 'B' },
@@ -84,13 +85,38 @@ export default function Home({ onEnterGame }) {
   const [joinCode, setJoinCode] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [pdfFile, setPdfFile] = useState(null)
+  const [questions, setQuestions] = useState(null)
+  const [generatingQ, setGeneratingQ] = useState(false)
+  const fileRef = useRef()
   const mounted = useMount()
+
+  const handlePDF = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    setPdfFile(file)
+    setGeneratingQ(true)
+    try {
+      const base64 = await new Promise((res, rej) => {
+        const reader = new FileReader()
+        reader.onload = () => res(reader.result.split(',')[1])
+        reader.onerror = rej
+        reader.readAsDataURL(file)
+      })
+      const text = await extractTextFromPDF(base64)
+      const qs = await generateQuestionsFromText(text)
+      setQuestions(qs)
+    } catch (e) {
+      setQuestions(SAMPLE_QUESTIONS)
+    }
+    setGeneratingQ(false)
+  }
 
   const handleCreate = async () => {
     if (!playerName.trim()) { setError('Enter your name'); return }
     setLoading(true); setError('')
     try {
-      const code = await createRoom(playerName.trim(), SAMPLE_QUESTIONS)
+      const code = await createRoom(playerName.trim(), questions || SAMPLE_QUESTIONS)
       await joinRoom(code, playerName.trim())
       onEnterGame(code, playerName.trim(), true)
     } catch (e) {
@@ -136,7 +162,6 @@ export default function Home({ onEnterGame }) {
           font-weight: normal;
           font-style: normal;
         }
-        @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;400;600&display=swap');
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         body, #root { min-height: 100vh; }
 
@@ -210,7 +235,6 @@ export default function Home({ onEnterGame }) {
         {/* LANDING */}
         {!mode && (
           <>
-            {/* Title */}
             <div style={{
               textAlign: "center", marginBottom: "10px",
               animation: "revealTitle 0.9s cubic-bezier(.22,1,.36,1) 0.15s both",
@@ -231,7 +255,6 @@ export default function Home({ onEnterGame }) {
               }}>TAKE</span>
             </div>
 
-            {/* Divider */}
             <div style={{
               display: "flex", alignItems: "center", gap: "10px",
               width: "100%", margin: "4px 0 32px",
@@ -247,7 +270,6 @@ export default function Home({ onEnterGame }) {
               <div style={{ flex: 1, height: "1px", background: `linear-gradient(to left, transparent, ${C.charcoal})` }} />
             </div>
 
-            {/* Buttons */}
             <div style={{
               display: "flex", flexDirection: "column", gap: "12px",
               width: "100%",
@@ -317,10 +339,51 @@ export default function Home({ onEnterGame }) {
               </div>
             )}
 
+            {/* PDF upload */}
+            {mode === 'create' && (
+              <div style={{ marginBottom: "20px" }}>
+                <label style={labelStyle}>REVISION NOTES</label>
+                <div
+                  onClick={() => fileRef.current.click()}
+                  style={{
+                    border: `1px dashed ${pdfFile ? C.pink : C.deepRed}`,
+                    borderRadius: "3px", padding: "20px",
+                    textAlign: "center", cursor: "pointer",
+                    background: "#0a0303",
+                    transition: "border-color 0.2s",
+                  }}>
+                  {generatingQ ? (
+                    <>
+                      <div style={{ fontSize: "22px", marginBottom: "6px" }}>⚡</div>
+                      <div style={{ fontFamily: "'Arena', sans-serif", color: C.pink, fontSize: "12px", letterSpacing: "3px" }}>GENERATING QUESTIONS...</div>
+                    </>
+                  ) : questions ? (
+                    <>
+                      <div style={{ fontSize: "22px", marginBottom: "6px" }}>✅</div>
+                      <div style={{ fontFamily: "'Arena', sans-serif", color: C.pink, fontSize: "12px", letterSpacing: "2px" }}>
+                        {pdfFile?.name} — {questions.length} questions ready
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div style={{ fontSize: "22px", marginBottom: "6px" }}>📄</div>
+                      <div style={{ fontFamily: "'Arena', sans-serif", color: C.warmGrey, fontSize: "12px", letterSpacing: "3px" }}>UPLOAD PDF</div>
+                      <div style={{ fontFamily: "'Arena', sans-serif", color: C.charcoal, fontSize: "11px", marginTop: "3px", fontStyle: "italic" }}>AI generates your questions</div>
+                    </>
+                  )}
+                  <input ref={fileRef} type="file" accept=".pdf" onChange={handlePDF} style={{ display: "none" }} />
+                </div>
+                {!pdfFile && !generatingQ && (
+                  <div style={{ color: C.charcoal, fontSize: "11px", fontFamily: "'Arena', sans-serif", marginTop: "6px", textAlign: "center", fontStyle: "italic" }}>
+                    No PDF? Sample questions will be used.
+                  </div>
+                )}
+              </div>
+            )}
+
             {error && (
               <div style={{
-                color: C.blood,
-                fontFamily: "'Arena', sans-serif",
+                color: C.blood, fontFamily: "'Arena', sans-serif",
                 fontSize: "13px", marginBottom: "14px", letterSpacing: "1px",
               }}>
                 {error}
