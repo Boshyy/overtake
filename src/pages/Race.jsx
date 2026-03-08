@@ -24,7 +24,7 @@ export default function Race({ roomCode, playerName, onFinish }) {
   const [maxTime, setMaxTime] = useState(QUESTION_TIME)
   const [activePowerup, setActivePowerup] = useState(null)
   const [hasAnswered, setHasAnswered] = useState(false)
-  const [countdown, setCountdown] = useState(10)
+  const [countdown, setCountdown] = useState(5)
   const [raceStarted, setRaceStarted] = useState(false)
   const timerRef = useRef(null)
   const tickRef = useRef(null)
