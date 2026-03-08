@@ -43,13 +43,13 @@ export default function Lobby({ roomCode, playerName, isHost, onStartRace }) {
       <style>{`
         @font-face {
           font-family: 'Macqueen';
-          src: url('/src/assets/fonts/MacqueenPersonalUse-woojw.ttf') format('truetype');
+          src: url('/fonts/MacqueenPersonalUse-woojw.ttf') format('truetype');
           font-weight: normal;
           font-style: normal;
         }
         @font-face {
           font-family: 'Arena';
-          src: url('/src/assets/fonts/Arena-rvwaK.ttf') format('truetype');
+          src: url('/fonts/Arena-rvwaK.ttf') format('truetype');
           font-weight: normal;
           font-style: normal;
         }

@@ -144,8 +144,8 @@ export default function Race({ roomCode, playerName, onFinish }) {
         justifyContent: 'center', gap: '24px', overflow: 'hidden',
       }}>
         <style>{`
-          @font-face { font-family: 'Macqueen'; src: url('/src/assets/fonts/MacqueenPersonalUse-woojw.ttf') format('truetype'); }
-          @font-face { font-family: 'Arena'; src: url('/src/assets/fonts/Arena-rvwaK.ttf') format('truetype'); }
+          @font-face { font-family: 'Macqueen'; src: url('/fonts/MacqueenPersonalUse-woojw.ttf') format('truetype'); }
+          @font-face { font-family: 'Arena'; src: url('/fonts/Arena-rvwaK.ttf') format('truetype'); }
           @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.08)} }
           @keyframes fadeIn { from{opacity:0} to{opacity:1} }
         `}</style>
@@ -178,8 +178,8 @@ export default function Race({ roomCode, playerName, onFinish }) {
   return (
     <>
       <style>{`
-        @font-face { font-family: 'Macqueen'; src: url('/src/assets/fonts/MacqueenPersonalUse-woojw.ttf') format('truetype'); }
-        @font-face { font-family: 'Arena'; src: url('/src/assets/fonts/Arena-rvwaK.ttf') format('truetype'); }
+        @font-face { font-family: 'Macqueen'; src: url('/fonts/MacqueenPersonalUse-woojw.ttf') format('truetype'); }
+        @font-face { font-family: 'Arena'; src: url('/fonts/Arena-rvwaK.ttf') format('truetype'); }
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
         .race-root {

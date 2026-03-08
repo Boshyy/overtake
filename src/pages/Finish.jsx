@@ -30,11 +30,11 @@ export default function Finish({ winner, players, onPlayAgain }) {
       <style>{`
         @font-face {
           font-family: 'Macqueen';
-          src: url('/src/assets/fonts/MacqueenPersonalUse-woojw.ttf') format('truetype');
+          src: url('/fonts/MacqueenPersonalUse-woojw.ttf') format('truetype');
         }
         @font-face {
           font-family: 'Arena';
-          src: url('/src/assets/fonts/Arena-rvwaK.ttf') format('truetype');
+          src: url('/fonts/Arena-rvwaK.ttf') format('truetype');
         }
         @keyframes bounce {
           0%,100% { transform: translateY(0); }
