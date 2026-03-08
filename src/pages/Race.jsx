@@ -16,7 +16,6 @@ export default function Race({ roomCode, playerName, onFinish }) {
   const timerRef = useRef(null)
   const questionKeyRef = useRef(null)
 
-
   useEffect(() => {
     if (navigator.mediaDevices) {
       navigator.mediaDevices.getUserMedia({ audio: true })
@@ -25,11 +24,7 @@ export default function Race({ roomCode, playerName, onFinish }) {
     }
     const interval = setInterval(() => {
       setCountdown(prev => {
-        if (prev <= 1) {
-          clearInterval(interval)
-          setRaceStarted(true)
-          return 0
-        }
+        if (prev <= 1) { clearInterval(interval); setRaceStarted(true); return 0 }
         return prev - 1
       })
     }, 1000)
@@ -64,10 +59,6 @@ export default function Race({ roomCode, playerName, onFinish }) {
   }, [room?.currentQuestionIndex, room?.currentPlayerIndex, room?.questionPhase])
 
   useEffect(() => {
-    if (timeLeft === 0 && !hasAnswered && isMyTurn) handleAnswer(false, null)
-  }, [timeLeft])
-
-  useEffect(() => {
     if (room?.status === 'finished') {
       clearInterval(timerRef.current)
       setTimeout(() => onFinish(room.winner, Object.values(room.players || {})), 1000)
@@ -76,24 +67,20 @@ export default function Race({ roomCode, playerName, onFinish }) {
 
   useEffect(() => () => clearInterval(timerRef.current), [])
 
+  const players = room ? Object.values(room.players || {}) : []
+  const playerNames = room ? Object.keys(room.players || {}) : []
+  const currentTurnName = playerNames[room?.currentPlayerIndex] || ''
+  const isMyTurn = currentTurnName === playerName
+  const currentQuestion = room?.questions?.[room?.currentQuestionIndex % (room?.questions?.length || 1)]
+  const myPlayer = room?.players?.[playerName]
+  const myPowerups = myPlayer?.powerups || []
+
   const handleAnswer = useCallback(async (correct, powerup) => {
     if (hasAnswered) return
     setHasAnswered(true)
     clearInterval(timerRef.current)
     await submitAnswer(roomCode, playerName, correct, powerup)
   }, [hasAnswered, roomCode, playerName])
-
-  if (!room) return <Loading />
-
-  const players = Object.values(room.players || {})
-  
-  const playerNames = Object.keys(room.players || {})
-  const currentTurnName = playerNames[room.currentPlayerIndex] || ''
-  const isMyTurn = currentTurnName === playerName
-  const currentQuestion = room?.questions?.[room?.currentQuestionIndex % (room?.questions?.length || 1)]
-  const myPlayer = room?.players?.[playerName]
-  const myPowerups = myPlayer?.powerups || []
-
 
   useEffect(() => {
     if (timeLeft === 0 && !hasAnswered && isMyTurn) {
@@ -110,6 +97,8 @@ export default function Race({ roomCode, playerName, onFinish }) {
     setActivePowerup(puId)
     await firebaseUsePowerup(roomCode, playerName, puId)
   }
+
+  // --- all hooks above, conditionals below ---
 
   if (!room) return <Loading />
 
@@ -152,7 +141,6 @@ export default function Race({ roomCode, playerName, onFinish }) {
     )
   }
 
-  const sortedPlayers = [...players].sort((a, b) => b.position - a.position)
   const currentPlayerSlot = players.findIndex(p => p.name === currentTurnName)
 
   return (
@@ -172,7 +160,6 @@ export default function Race({ roomCode, playerName, onFinish }) {
           font-family: 'Barlow Condensed', sans-serif;
         }
 
-        /* Top header bar */
         .race-header {
           height: 44px;
           min-height: 44px;
@@ -213,7 +200,6 @@ export default function Race({ roomCode, playerName, onFinish }) {
           font-weight: 700;
         }
 
-        /* 4-quadrant grid */
         .race-grid {
           flex: 1;
           display: grid;
@@ -241,7 +227,6 @@ export default function Race({ roomCode, playerName, onFinish }) {
           opacity: 0.8;
         }
 
-        /* Top-left: Standings */
         .q-standings {
           grid-column: 1;
           grid-row: 1;
@@ -249,21 +234,18 @@ export default function Race({ roomCode, playerName, onFinish }) {
           border-bottom: 1px solid #111125;
         }
 
-        /* Bottom-left: Power-ups (placeholder) */
         .q-powerups {
           grid-column: 1;
           grid-row: 2;
           border-right: 1px solid #111125;
         }
 
-        /* Top-right: Track */
         .q-track {
           grid-column: 2;
           grid-row: 1;
           border-bottom: 1px solid #111125;
         }
 
-        /* Bottom-right: Question */
         .q-question {
           grid-column: 2;
           grid-row: 2;
@@ -293,7 +275,6 @@ export default function Race({ roomCode, playerName, onFinish }) {
       `}</style>
 
       <div className="race-root">
-        {/* Header */}
         <header className="race-header">
           <div className="race-logo">OVER<span>TAKE</span></div>
           <div className="race-meta">
@@ -305,10 +286,7 @@ export default function Race({ roomCode, playerName, onFinish }) {
           </div>
         </header>
 
-        {/* 4-quadrant layout */}
         <div className="race-grid">
-
-          {/* TOP LEFT — Standings */}
           <div className="quadrant q-standings">
             <div className="quadrant-label">STANDINGS</div>
             <div className="quadrant-inner">
@@ -316,7 +294,6 @@ export default function Race({ roomCode, playerName, onFinish }) {
             </div>
           </div>
 
-          {/* BOTTOM LEFT — Power-ups */}
           <div className="quadrant q-powerups">
             <div className="quadrant-label">POWER-UPS</div>
             <div className="quadrant-inner">
@@ -329,18 +306,13 @@ export default function Race({ roomCode, playerName, onFinish }) {
             </div>
           </div>
 
-          {/* TOP RIGHT — Track */}
           <div className="quadrant q-track">
             <div className="quadrant-label">CIRCUIT</div>
             <div className="quadrant-inner" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <F1Track
-                players={players}
-                currentPlayerIndex={room.currentPlayerIndex || 0}
-              />
+              <F1Track players={players} currentPlayerIndex={room.currentPlayerIndex || 0} />
             </div>
           </div>
 
-          {/* BOTTOM RIGHT — Question */}
           <div className="quadrant q-question">
             <div className="quadrant-label">
               {isMyTurn ? 'YOUR QUESTION' : `WAITING FOR ${currentTurnName?.toUpperCase()}`}
@@ -363,14 +335,12 @@ export default function Race({ roomCode, playerName, onFinish }) {
               )}
             </div>
           </div>
-
         </div>
       </div>
     </>
   )
 }
 
-// Compact standings for the smaller quadrant
 function StandingsCompact({ players, currentPlayerName }) {
   const sorted = [...players].sort((a, b) => b.position - a.position)
   const MEDALS = ['🥇', '🥈', '🥉', '🏅']
@@ -433,7 +403,6 @@ function StandingsCompact({ players, currentPlayerName }) {
   )
 }
 
-// Power-ups panel
 function PowerupsPanel({ myPowerups, activePowerup, isMyTurn, onUsePowerup }) {
   if (!myPowerups.length) {
     return (
