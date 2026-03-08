@@ -33,18 +33,25 @@ export default function QuestionCard({
 
   useEffect(() => {
     if (!transcript || submitted) return
-    const norm = s => s.toLowerCase().trim()
+    const norm = s => s.toLowerCase().trim().replace(/[^a-z0-9 ]/g, '')
     const spoken = norm(transcript)
+    let bestMatch = null
+    let bestScore = 0
     for (const opt of OPTIONS) {
-      const optionText = question?.options?.find(o => o.startsWith(`${opt})`))
-      if (!optionText) continue
-      const optNorm = norm(optionText.replace(`${opt})`, ''))
-      if (spoken.includes(opt.toLowerCase()) || spoken.includes(optNorm.substring(0, 6))) {
-        setSelected(opt)
-        break
+        const optionText = question?.options?.find(o => o.startsWith(`${opt})`))
+        if (!optionText) continue
+        const optWords = norm(optionText.replace(`${opt})`, '')).split(' ').filter(w => w.length > 2)
+        let score = 0
+        for (const word of optWords) {
+            if (spoken.includes(word)) score++
+        }
+        if (score > bestScore) {
+            bestScore = score
+            bestMatch = opt
+        }
       }
-    }
-  }, [transcript])
+      if (bestMatch && bestScore > 0) setSelected(bestMatch)
+    }, [transcript])
 
   const handleSubmit = () => {
     if (!selected || submitted) return
@@ -202,7 +209,7 @@ export default function QuestionCard({
           fontFamily: 'Exo 2, sans-serif', fontSize: '14px',
           fontStyle: transcript ? 'normal' : 'italic',
         }}>
-          {transcript || 'Shout your answer — A, B, C or D!'}
+          {transcript || 'Say your answer out loud — e.g. "mitochondria"'}
         </div>
       </div>
 

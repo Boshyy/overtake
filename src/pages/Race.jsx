@@ -69,10 +69,16 @@ export default function Race({ roomCode, playerName, onFinish }) {
   const playerNames = Object.keys(room.players || {})
   const currentTurnName = playerNames[room.currentPlayerIndex] || ''
   const isMyTurn = currentTurnName === playerName
-  const currentQuestion = room.questions?.[room.currentQuestionIndex % (room.questions?.length || 1)]
-  const myPlayer = room.players?.[playerName]
+  const currentQuestion = room?.questions?.[room?.currentQuestionIndex % (room?.questions?.length || 1)]
+  const myPlayer = room?.players?.[playerName]
   const myPowerups = myPlayer?.powerups || []
 
+
+  useEffect(() => {
+    if (timeLeft === 0 && !hasAnswered && isMyTurn) {
+      handleAnswer(false, null)
+    }
+  }, [timeLeft, hasAnswered, isMyTurn, handleAnswer])
 
   const handleUsePowerup = async (puId) => {
     if (puId === 'SAFETY') {
@@ -83,6 +89,8 @@ export default function Race({ roomCode, playerName, onFinish }) {
     setActivePowerup(puId)
     await firebaseUsePowerup(roomCode, playerName, puId)
   }
+
+  if (!room) return <Loading />
 
   const sortedPlayers = [...players].sort((a, b) => b.position - a.position)
   const currentPlayerSlot = players.findIndex(p => p.name === currentTurnName)
