@@ -1,19 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { createRoom, joinRoom } from '../lib/game.js'
+import { POWERUPS } from '../lib/constants.js'
 import { generateQuestionsFromText, extractTextFromPDF } from '../lib/ai.js'
-
-const C = {
-  blood:    "#B32623",
-  deepRed:  "#761212",
-  darkest:  "#080405",
-  darkWine: "#2F1416",
-  crimson:  "#5C0B0D",
-  tan:      "#BE9F7E",
-  warmGrey: "#888278",
-  charcoal: "#5B514F",
-  cream:    "#F2E8D9",
-  pink:     "#BB7780",
-}
 
 const SAMPLE_QUESTIONS = [
   { q: 'What is the powerhouse of the cell?', options: ['A) Nucleus', 'B) Mitochondria', 'C) Ribosome', 'D) Golgi body'], a: 'B' },
@@ -89,13 +77,13 @@ export default function Home({ onEnterGame }) {
   const [questions, setQuestions] = useState(null)
   const [generatingQ, setGeneratingQ] = useState(false)
   const fileRef = useRef()
-  const mounted = useMount()
 
   const handlePDF = async (e) => {
     const file = e.target.files[0]
     if (!file) return
     setPdfFile(file)
     setGeneratingQ(true)
+    setError('')
     try {
       const base64 = await new Promise((res, rej) => {
         const reader = new FileReader()
@@ -107,6 +95,7 @@ export default function Home({ onEnterGame }) {
       const qs = await generateQuestionsFromText(text)
       setQuestions(qs)
     } catch (e) {
+      setError('Could not process PDF. Using sample questions.')
       setQuestions(SAMPLE_QUESTIONS)
     }
     setGeneratingQ(false)
@@ -149,88 +138,22 @@ export default function Home({ onEnterGame }) {
       justifyContent: "center",
       overflow: "hidden",
     }}>
-      <style>{`
-        @font-face {
-          font-family: 'Macqueen';
-          src: url('/src/assets/fonts/MacqueenPersonalUse-woojw.ttf') format('truetype');
-          font-weight: normal;
-          font-style: normal;
-        }
-        @font-face {
-          font-family: 'Arena';
-          src: url('/src/assets/fonts/Arena-rvwaK.ttf') format('truetype');
-          font-weight: normal;
-          font-style: normal;
-        }
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        body, #root { min-height: 100vh; }
-
-        @keyframes fadeUp {
-          from { opacity: 0; transform: translateY(20px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes fadeIn {
-          from { opacity: 0; } to { opacity: 1; }
-        }
-        @keyframes revealTitle {
-          0%   { opacity: 0; letter-spacing: 16px; }
-          100% { opacity: 1; letter-spacing: 2px; }
-        }
-        @keyframes slideIn {
-          from { opacity: 0; transform: translateX(-16px); }
-          to   { opacity: 1; transform: translateX(0); }
-        }
-
-        input::placeholder { color: #5B514F; font-style: italic; }
-        input:focus { outline: none; border-color: #BB7780 !important; }
-        .back-btn {
-          background: none; border: none; color: #5B514F;
-          cursor: pointer; font-family: 'Arena', sans-serif;
-          font-size: 13px; letter-spacing: 4px; padding: 0;
-          transition: color 0.2s; text-transform: uppercase;
-        }
-        .back-btn:hover { color: #BE9F7E; }
-      `}</style>
-
-      {/* Checkered top */}
-      <div style={{
-        position: "fixed", top: 0, left: 0, right: 0,
-        height: "24px", zIndex: 100,
-        backgroundImage: `repeating-conic-gradient(${C.cream} 0% 25%, ${C.blood} 0% 50%)`,
-        backgroundSize: "24px 24px",
-      }} />
-
-      {/* Checkered bottom */}
-      <div style={{
-        position: "fixed", bottom: 0, left: 0, right: 0,
-        height: "24px", zIndex: 100,
-        backgroundImage: `repeating-conic-gradient(${C.cream} 0% 25%, ${C.blood} 0% 50%)`,
-        backgroundSize: "24px 24px",
-        transform: "scaleY(-1)",
-      }} />
-
-      {/* Background */}
-      <div style={{
-        position: "fixed", inset: 0, zIndex: 0,
-        background: `radial-gradient(ellipse at 50% 40%, #1a0a08 0%, ${C.darkest} 70%)`,
-      }} />
-
-      {/* Side stripes */}
-      <div style={{ position: "fixed", left: 0, top: 0, bottom: 0, width: "3px", background: `linear-gradient(to bottom, transparent, ${C.blood}, transparent)`, opacity: 0.5, zIndex: 1 }} />
-      <div style={{ position: "fixed", right: 0, top: 0, bottom: 0, width: "3px", background: `linear-gradient(to bottom, transparent, ${C.blood}, transparent)`, opacity: 0.5, zIndex: 1 }} />
-
-      {/* Content */}
-      <div style={{
-        width: "100%", maxWidth: "400px",
-        padding: "60px 20px",
-        opacity: mounted ? 1 : 0,
-        transform: mounted ? "translateY(0)" : "translateY(20px)",
-        transition: "opacity 0.6s ease, transform 0.6s ease",
-        position: "relative", zIndex: 10,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-      }}>
+      <div style={{ textAlign: 'center', marginBottom: '48px' }}>
+        <div style={{ fontSize: '11px', color: '#f97316', letterSpacing: '7px', fontFamily: 'Orbitron, monospace', marginBottom: '6px', opacity: 0.8 }}>
+          REVISION LEAGUE
+        </div>
+        <h1 style={{
+          fontFamily: 'Orbitron, monospace', fontWeight: 900,
+          fontSize: 'clamp(2.5rem,8vw,5rem)', margin: 0,
+          color: '#fff', letterSpacing: '4px',
+          textShadow: '0 0 40px rgba(249,115,22,0.5)',
+        }}>
+          OVER<span style={{ color: '#f97316' }}>TAKE</span>
+        </h1>
+        <div style={{ color: '#4b5563', fontFamily: 'Exo 2, sans-serif', marginTop: '8px', fontSize: '14px' }}>
+          Study hard. Race harder.
+        </div>
+      </div>
 
         {/* LANDING */}
         {!mode && (
@@ -318,7 +241,50 @@ export default function Home({ onEnterGame }) {
               />
             </div>
 
-            {/* Room code */}
+            {mode === 'create' && (
+              <div style={{ marginBottom: '20px' }}>
+                <label style={labelStyle}>REVISION NOTES (PDF)</label>
+                <div
+                  onClick={() => fileRef.current.click()}
+                  style={{
+                    border: `2px dashed ${pdfFile ? '#22c55e' : '#374151'}`,
+                    borderRadius: '12px', padding: '20px', textAlign: 'center',
+                    cursor: 'pointer', background: '#080812',
+                  }}>
+                  {generatingQ ? (
+                    <div>
+                      <div style={{ fontSize: '28px', marginBottom: '8px' }}>⚡</div>
+                      <div style={{ color: '#f97316', fontFamily: 'Orbitron, monospace', fontSize: '12px' }}>GENERATING QUESTIONS...</div>
+                    </div>
+                  ) : questions ? (
+                    <div>
+                      <div style={{ fontSize: '28px', marginBottom: '8px' }}>✅</div>
+                      <div style={{ color: '#22c55e', fontFamily: 'Exo 2, sans-serif', fontSize: '13px' }}>
+                        {pdfFile?.name} — {questions.length} questions ready
+                      </div>
+                      <div style={{ color: '#6b7280', fontSize: '11px', marginTop: '4px' }}>Click to change</div>
+                    </div>
+                  ) : (
+                    <div>
+                      <div style={{ fontSize: '28px', marginBottom: '8px' }}>📄</div>
+                      <div style={{ color: '#9ca3af', fontFamily: 'Exo 2, sans-serif', fontSize: '13px' }}>
+                        Click to upload PDF notes
+                      </div>
+                      <div style={{ color: '#4b5563', fontSize: '11px', marginTop: '4px' }}>
+                        AI will generate quiz questions automatically
+                      </div>
+                    </div>
+                  )}
+                  <input ref={fileRef} type="file" accept=".pdf" onChange={handlePDF} style={{ display: 'none' }} />
+                </div>
+                {!pdfFile && !generatingQ && (
+                  <div style={{ color: '#4b5563', fontSize: '11px', fontFamily: 'Exo 2, sans-serif', marginTop: '8px', textAlign: 'center' }}>
+                    No PDF? Sample questions will be used.
+                  </div>
+                )}
+              </div>
+            )}
+
             {mode === 'join' && (
               <div style={{ marginBottom: "14px" }}>
                 <label style={labelStyle}>ROOM CODE</label>
@@ -393,10 +359,10 @@ export default function Home({ onEnterGame }) {
             <BigButton
               primary
               onClick={mode === 'create' ? handleCreate : handleJoin}
-              disabled={loading}
-            >
-              {loading ? '...' : mode === 'create' ? 'Create & Enter Lobby' : 'Join Race'}
-            </BigButton>
+              disabled={loading || generatingQ}
+              style={btnStyle(loading || generatingQ ? '#374151' : '#f97316')}>
+              {loading ? '...' : generatingQ ? 'GENERATING...' : mode === 'create' ? '🏁 Create & Enter Lobby' : '🚗 Join Race'}
+            </button>
           </div>
         )}
 

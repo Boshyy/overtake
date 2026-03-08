@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { subscribeRoom, setReady, startGame } from '../lib/game.js'
 import { PLAYER_COLORS } from '../lib/constants.js'
 
-export default function Lobby({ roomCode, playerName, isHost }) {
+export default function Lobby({ roomCode, playerName, isHost, onStartRace }) {
   const [room, setRoom] = useState(null)
 
   useEffect(() => {
@@ -102,11 +102,13 @@ export default function Lobby({ roomCode, playerName, isHost }) {
         )}
 
         {isHost && allReady && (
-          <button onClick={() => startGame(roomCode)} style={{ ...bigBtn('#f97316'), marginTop: '12px' }}>
-            🏁 START RACE
-          </button>
+            <button onClick={async () => {
+                await startGame(roomCode)
+                onStartRace()
+            }} style={{ ...bigBtn('#f97316'), marginTop: '12px' }}>
+                🏁 START RACE
+            </button>
         )}
-
         {isHost && !allReady && players.length >= 2 && (
           <div style={{ textAlign: 'center', color: '#6b7280', fontFamily: 'Exo 2, sans-serif', fontSize: '13px', marginTop: '12px' }}>
             Waiting for all players to ready up...
