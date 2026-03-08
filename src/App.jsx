@@ -6,27 +6,26 @@ import Race from './pages/Race.jsx'
 import Finish from './pages/Finish.jsx'
 
 export default function App() {
-  const [screen, setScreen] = useState('home') // home | lobby | race | finish
+  const [screen, setScreen] = useState('home')
   const [roomCode, setRoomCode] = useState(null)
   const [playerName, setPlayerName] = useState(null)
   const [isHost, setIsHost] = useState(false)
   const [finishData, setFinishData] = useState(null)
 
-  // Watch room status to auto-navigate from lobby → race
   useEffect(() => {
-    if (!roomCode || screen === 'home' || screen === 'finish') return
+    if (!roomCode) return
     const unsub = subscribeRoom(roomCode, (room) => {
       if (!room) return
-      if ((room.status === 'racing' || room.status === 'countdown') && screen === 'lobby') {
+      if (room.status === 'racing' || room.status === 'countdown') {
         setScreen('race')
       }
-      if (room.status === 'finished' && screen === 'race') {
+      if (room.status === 'finished') {
         setFinishData({ winner: room.winner, players: Object.values(room.players || {}) })
         setScreen('finish')
       }
     })
     return unsub
-  }, [roomCode, screen])
+  }, [roomCode])
 
   const handleEnterGame = (code, name, host) => {
     setRoomCode(code)
