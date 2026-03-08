@@ -148,6 +148,19 @@ async function advanceTurn(code, room) {
   const playerNames = Object.keys(room.players || {})
   const nextPlayerIndex = ((room.currentPlayerIndex || 0) + 1) % playerNames.length
   const nextQuestionIndex = (room.currentQuestionIndex || 0) + 1
+  const totalQuestions = (room.questions || []).length
+
+  // All questions used up — whoever is furthest ahead wins
+  if (nextQuestionIndex >= totalQuestions) {
+    const allPlayers = Object.values(room.players || {})
+    const leader = allPlayers.sort((a, b) => b.position - a.position)[0]
+    await update(ref(db, `rooms/${code}`), {
+      status: 'finished',
+      winner: leader.name,
+      finishReason: 'questions_exhausted',
+    })
+    return
+  }
 
   const spawnPowerup = Math.random() < 0.25
   const puKeys = Object.keys(POWERUPS)
