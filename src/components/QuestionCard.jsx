@@ -35,20 +35,30 @@ export default function QuestionCard({
     return () => stop()
   }, [question?.q, isMyTurn])
 
-  useEffect(() => {
-    if (!transcript || submitted) return
-    const norm = s => s.toLowerCase().trim()
-    const spoken = norm(transcript)
-    for (const opt of OPTIONS) {
-      const optionText = question?.options?.find(o => o.startsWith(`${opt})`))
-      if (!optionText) continue
-      const optNorm = norm(optionText.replace(`${opt})`, ''))
-      if (spoken.includes(opt.toLowerCase()) || spoken.includes(optNorm.substring(0, 6))) {
-        setSelected(opt)
-        break
-      }
+    useEffect(() => {
+        if (!transcript || submitted) return
+        const spoken = transcript.toLowerCase().trim()
+        const lastWord = spoken.split(' ').pop()
+
+        // Match single letter A B C D spoken clearly
+        if (/^[abcd]$/.test(lastWord)) {
+            setSelected(lastWord.toUpperCase())
+        return
     }
-  }, [transcript])
+
+        // Match full option text
+        for (const opt of OPTIONS) {
+            const optionText = question?.options?.find(o => o.startsWith(`${opt})`))
+            if (!optionText) continue
+            const optClean = optionText.replace(`${opt}) `, '').toLowerCase()
+            const optWords = optClean.split(' ').filter(w => w.length > 3)
+            const matchCount = optWords.filter(w => spoken.includes(w)).length
+            if (matchCount >= 2 || (optWords.length === 1 && spoken.includes(optWords[0]))) {
+                setSelected(opt)
+                return
+            }
+        }
+    }, [transcript])
 
   const handleSubmit = () => {
     if (!selected || submitted) return
