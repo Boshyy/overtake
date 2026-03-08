@@ -169,8 +169,6 @@ export default function Race({ roomCode, playerName, onFinish }) {
     )
   }
 
-  const currentPlayerSlot = players.findIndex(p => p.name === currentTurnName)
-
   return (
     <>
       <style>{`
