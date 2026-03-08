@@ -15,13 +15,10 @@ export default function Race({ roomCode, playerName, onFinish }) {
   const questionKeyRef = useRef(null)
 
   useEffect(() => {
-    const unsub = subscribeRoom(roomCode, (data) => {
-      setRoom(data)
-    })
+    const unsub = subscribeRoom(roomCode, (data) => setRoom(data))
     return unsub
   }, [roomCode])
 
-  // Reset when question changes
   useEffect(() => {
     if (!room) return
     const qKey = `${room.currentQuestionIndex}-${room.currentPlayerIndex}`
@@ -36,23 +33,13 @@ export default function Race({ roomCode, playerName, onFinish }) {
       if (room.questionPhase === 'active') {
         timerRef.current = setInterval(() => {
           setTimeLeft(prev => {
-            if (prev <= 1) {
-              clearInterval(timerRef.current)
-              return 0
-            }
+            if (prev <= 1) { clearInterval(timerRef.current); return 0 }
             return prev - 1
           })
         }, 1000)
       }
     }
   }, [room?.currentQuestionIndex, room?.currentPlayerIndex, room?.questionPhase])
-
-  // Auto-submit on timeout if it's my turn
-  useEffect(() => {
-    if (timeLeft === 0 && !hasAnswered && isMyTurn) {
-      handleAnswer(false, null)
-    }
-  }, [timeLeft])
 
   useEffect(() => {
     if (room?.status === 'finished') {
@@ -63,14 +50,12 @@ export default function Race({ roomCode, playerName, onFinish }) {
 
   useEffect(() => () => clearInterval(timerRef.current), [])
 
-  if (!room) return <Loading />
-
-  const players = Object.values(room.players || {})
-  const playerNames = Object.keys(room.players || {})
-  const currentTurnName = playerNames[room.currentPlayerIndex] || ''
+  const players = room ? Object.values(room.players || {}) : []
+  const playerNames = room ? Object.keys(room.players || {}) : []
+  const currentTurnName = playerNames[room?.currentPlayerIndex] || ''
   const isMyTurn = currentTurnName === playerName
-  const currentQuestion = room.questions?.[room.currentQuestionIndex % (room.questions?.length || 1)]
-  const myPlayer = room.players?.[playerName]
+  const currentQuestion = room?.questions?.[room?.currentQuestionIndex % (room?.questions?.length || 1)]
+  const myPlayer = room?.players?.[playerName]
   const myPowerups = myPlayer?.powerups || []
 
   const handleAnswer = useCallback(async (correct, powerup) => {
@@ -79,6 +64,12 @@ export default function Race({ roomCode, playerName, onFinish }) {
     clearInterval(timerRef.current)
     await submitAnswer(roomCode, playerName, correct, powerup)
   }, [hasAnswered, roomCode, playerName])
+
+  useEffect(() => {
+    if (timeLeft === 0 && !hasAnswered && isMyTurn) {
+      handleAnswer(false, null)
+    }
+  }, [timeLeft, hasAnswered, isMyTurn, handleAnswer])
 
   const handleUsePowerup = async (puId) => {
     if (puId === 'SAFETY') {
@@ -90,6 +81,8 @@ export default function Race({ roomCode, playerName, onFinish }) {
     await firebaseUsePowerup(roomCode, playerName, puId)
   }
 
+  if (!room) return <Loading />
+
   const sortedPlayers = [...players].sort((a, b) => b.position - a.position)
   const currentPlayerSlot = players.findIndex(p => p.name === currentTurnName)
 
@@ -99,13 +92,12 @@ export default function Race({ roomCode, playerName, onFinish }) {
       backgroundImage: 'radial-gradient(ellipse at 50% 100%, #0d0d20 0%, #080810 50%)',
       padding: '16px',
     }}>
-      {/* Header */}
       <div style={{
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         marginBottom: '16px', maxWidth: '1100px', margin: '0 auto 16px',
       }}>
         <div style={{ fontFamily: 'Orbitron, monospace', fontWeight: 900, fontSize: '18px', color: '#fff' }}>
-          REV<span style={{ color: '#f97316' }}>RACER</span>
+          OVER<span style={{ color: '#f97316' }}>TAKE</span>
         </div>
         <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
           <div style={{ color: '#6b7280', fontFamily: 'Exo 2, sans-serif', fontSize: '12px' }}>
@@ -122,16 +114,12 @@ export default function Race({ roomCode, playerName, onFinish }) {
         display: 'grid', gridTemplateColumns: '1fr 220px', gap: '20px',
         alignItems: 'start',
       }}>
-        {/* Left: Track + Question */}
         <div>
-          {/* F1 Track */}
           <div style={{
             background: '#0d0d1a', border: '1px solid #1f2937',
             borderRadius: '20px', padding: '20px', marginBottom: '20px',
           }}>
             <F1Track players={players} currentPlayerIndex={room.currentPlayerIndex || 0} />
-
-            {/* Car legend */}
             <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', marginTop: '12px', flexWrap: 'wrap' }}>
               {players.map((p, i) => (
                 <div key={p.name} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -143,7 +131,6 @@ export default function Race({ roomCode, playerName, onFinish }) {
                   }}>
                     {p.name} {p.name === playerName && '(you)'}
                   </span>
-                  {/* Powerup indicators */}
                   {(p.powerups || []).map((pu, j) => (
                     <span key={j} style={{ fontSize: '12px' }}>{POWERUPS[pu]?.emoji}</span>
                   ))}
@@ -152,7 +139,6 @@ export default function Race({ roomCode, playerName, onFinish }) {
             </div>
           </div>
 
-          {/* Question area */}
           {currentQuestion && (
             <QuestionCard
               question={currentQuestion}
@@ -170,11 +156,8 @@ export default function Race({ roomCode, playerName, onFinish }) {
           )}
         </div>
 
-        {/* Right: Standings */}
         <div style={{ position: 'sticky', top: '16px' }}>
           <Standings players={players} currentPlayerName={playerName} />
-
-          {/* My powerups display */}
           {myPowerups.length > 0 && (
             <div style={{
               marginTop: '16px', background: '#0d0d1a', border: '1px solid #1f2937',
@@ -192,9 +175,6 @@ export default function Race({ roomCode, playerName, onFinish }) {
                   </div>
                 </div>
               ))}
-              <div style={{ color: '#4b5563', fontSize: '11px', fontFamily: 'Exo 2, sans-serif', marginTop: '8px' }}>
-                Tap power-up buttons on your turn card to activate
-              </div>
             </div>
           )}
         </div>
