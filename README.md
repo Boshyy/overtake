@@ -7,7 +7,7 @@ A fast-paced, multiplayer F1-themed revision game. Players race around a track b
 ## Features
 
 - **Real-time multiplayer** across devices via Firebase
-- **AI-generated questions** from uploaded PDF notes (powered by Gemini)
+- **AI-generated questions** from uploaded PDF notes (powered by Anthropic)
 - **F1 track** with animated cars moving around the circuit
 - **Speech recognition** — shout the answer into your mic
 - **Power-ups**: DRS Boost 🟣, Safety Car 🟡, Slipstream 🔴
